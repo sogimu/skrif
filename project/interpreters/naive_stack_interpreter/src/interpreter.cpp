@@ -114,15 +114,15 @@ Json Interpreter::eval( const std::string& expression ) const
     LexicalTokens lexical_tokens( expression );
     // std::cout << lexical_tokens << std::endl;
 
-    // std::cout << "== AST ==" << std::endl;
+    std::cout << "== AST ==" << std::endl;
     AbstractSyntaxTree ast( lexical_tokens );
-    // std::cout << ast << std::endl;
+    std::cout << ast << std::endl;
 
-    // std::cout << "== CFG ==" << std::endl;
+    std::cout << "== CFG ==" << std::endl;
     ControlFlowGraph cfg{ ast };
-    // std::cout << cfg << std::endl;
+    std::cout << cfg << std::endl;
 
-    // std::cout << "== Executioning ==" << std::endl;
+    std::cout << "== Executioning ==" << std::endl;
     StackMachine stack_machine{ cfg };
     result = stack_machine.exec();
   // } 

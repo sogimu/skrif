@@ -4,6 +4,7 @@
 #include "i_syntax_node_visitor.h"
 #include "syntax_node_empty_visitor.h"
 #include "nonterminals/scope_statment_syntax_node.h"
+#include "nonterminals/function_scope_statment_syntax_node.h"
 #include "terminals/name_syntax_node.h"
 #include "utils.h"
 
@@ -99,9 +100,9 @@ std::string FunctionStatmentSyntaxNode::name() const
    // return std::dynamic_pointer_cast< NameSyntaxNode >( this->operator[]( 0 ) );
 }
 
-ScopeSyntaxNodeSP FunctionStatmentSyntaxNode::scope() const
+FunctionScopeSyntaxNodeSP FunctionStatmentSyntaxNode::scope() const
 {
-   return std::dynamic_pointer_cast< ScopeSyntaxNode >( this->operator[]( this->Children().size() - 1 ) );
+   return std::dynamic_pointer_cast< FunctionScopeSyntaxNode >( this->operator[]( this->Children().size() - 1 ) );
 }
 
 std::vector< NameSyntaxNodeSP > FunctionStatmentSyntaxNode::arguments() const

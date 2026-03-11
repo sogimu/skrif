@@ -16,6 +16,7 @@ add_executable(${PROJECT_NAME}
     src/while_statment/while_statment_test.cpp
     src/member_expression/member_expression_test.cpp
     src/complex_scenarios/complex_scenarios_test.cpp
+    src/variable_store/variable_store_test.cpp
     src/main.cpp
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC naive_stack_interpreter GTest::gtest_main)

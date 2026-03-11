@@ -51,6 +51,7 @@ public:
       std::function< HandlerReturn( const State& state, const StatmentSyntaxNodeSP& ) > statment_syntax_node = [ this ] ( const State& state,  const StatmentSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const ColonSyntaxNodeSP& ) > colon_syntax_node = [ this ] ( const State& state,  const ColonSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const ScopeSyntaxNodeSP& ) > scope_statment_syntax_node = [ this ] ( const State& state,  const ScopeSyntaxNodeSP& node ) { return default_handler( state, node ); };
+      std::function< HandlerReturn( const State& state, const FunctionScopeSyntaxNodeSP& ) > function_scope_statment_syntax_node = [ this ] ( const State& state,  const FunctionScopeSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const ArraySyntaxNodeSP& ) > array_syntax_node = [ this ] ( const State& state,  const ArraySyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const ObjectSyntaxNodeSP& ) > object_syntax_node = [ this ] ( const State& state,  const ObjectSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const ObjectPairSyntaxNodeSP& ) > object_pair_syntax_node = [ this ] ( const State& state,  const ObjectPairSyntaxNodeSP& node ) { return default_handler( state, node ); };
@@ -223,6 +224,11 @@ public:
    void visit( const ScopeSyntaxNodeSP& node ) override
    {
       mHandlers.call( &Handlers::scope_statment_syntax_node, mHandlers.state(), node );
+   }
+
+   void visit( const FunctionScopeSyntaxNodeSP& node ) override
+   {
+      mHandlers.call( &Handlers::function_scope_statment_syntax_node, mHandlers.state(), node );
    }
 
    void visit( const ArraySyntaxNodeSP& node ) override

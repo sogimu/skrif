@@ -99,6 +99,11 @@ public:
       mCopy = std::make_shared< ScopeSyntaxNode >( *node );
    }
    
+   void visit( const FunctionScopeSyntaxNodeSP& node ) override
+   {
+      mCopy = std::make_shared< FunctionScopeSyntaxNode >( *node );
+   }
+   
    void visit( const ArraySyntaxNodeSP& node ) override
    {
       mCopy = std::make_shared< ArraySyntaxNode >( *node );

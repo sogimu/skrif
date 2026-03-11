@@ -44,6 +44,7 @@
 #include "nonterminals/function_call_syntax_node.h"
 #include "nonterminals/print_statment_syntax_node.h"
 #include "nonterminals/scope_statment_syntax_node.h"
+#include "nonterminals/function_scope_statment_syntax_node.h"
 #include "nonterminals/array_syntax_node.h"
 #include "nonterminals/object_pair_syntax_node.h"
 #include "nonterminals/object_syntax_node.h"
@@ -72,6 +73,7 @@ public:
    virtual void visit( const VarSyntaxNodeSP& ) = 0;
    virtual void visit( const StatmentSyntaxNodeSP& ) = 0;
    virtual void visit( const ScopeSyntaxNodeSP& ) = 0;
+   virtual void visit( const FunctionScopeSyntaxNodeSP& ) = 0;
    virtual void visit( const ArraySyntaxNodeSP& ) = 0;
    virtual void visit( const ObjectPairSyntaxNodeSP& ) = 0;
    virtual void visit( const ObjectSyntaxNodeSP& ) = 0;

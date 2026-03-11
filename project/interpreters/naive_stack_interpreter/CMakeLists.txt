@@ -7,6 +7,9 @@ set(HEADERS
     include/stack_machine.h
     include/json.h
     include/interpreter.h
+    include/Function.h
+    include/EnvScope.h
+    include/VariableStore.h
 )
 
 set(SOURCES
@@ -14,6 +17,9 @@ set(SOURCES
     src/stack_machine.cpp
     src/json.cpp
     src/interpreter.cpp
+    src/Function.cpp
+    src/EnvScope.cpp
+    src/VariableStore.cpp
 )
 
 add_library(${PROJECT_NAME} ${HEADERS} ${SOURCES})

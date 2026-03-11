@@ -141,6 +141,16 @@ public:
       mStack.pop_back();
    }
 
+   auto begin()
+   {
+      return mStack.begin();
+   }
+   
+   auto end()
+   {
+      return mStack.end();
+   }
+
 private:
    std::vector< std::pair< Node, bool > >& mStack;
 };
@@ -647,6 +657,12 @@ public:
          mResult = true;
    }
 
+   void visit( const FunctionScopeSyntaxNodeSP& /* node */ ) override
+   {
+      if constexpr( std::is_same_v< T, FunctionScopeSyntaxNode > )
+         mResult = true;
+   }
+
    void visit( const ArraySyntaxNodeSP& /* node */ ) override
    {
       if constexpr( std::is_same_v< T, ArraySyntaxNode > )
@@ -961,6 +977,7 @@ static std::string to_string( const ISyntaxNodeSP& node )
         handlers.comma_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "COMMA" << "}"; };
         handlers.statment_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "STATMENT" << "}"; };
         handlers.scope_statment_syntax_node = [ &s, print_lexical_tokens ]( const ISyntaxNodeSP& node ) { s << "{" << "SCOPE" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}"  << "}"; };
+        handlers.function_scope_statment_syntax_node = [ &s, print_lexical_tokens ]( const ISyntaxNodeSP& node ) { s << "{" << "FUNCTION_SCOPE" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}"  << "}"; };
         handlers.array_syntax_node = [ &s, print_lexical_tokens ]( const ISyntaxNodeSP& node ) { s << "{" << "ARRAY" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}"  << "}"; };
         handlers.object_pair_syntax_node = [ &s, print_lexical_tokens ]( const ISyntaxNodeSP& node ) { s << "{" << "OBJECT_PAIR" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}"  << "}"; };
         handlers.object_syntax_node = [ &s, print_lexical_tokens ]( const ISyntaxNodeSP& node ) { s << "{" << "OBJECT" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}"  << "}"; };
