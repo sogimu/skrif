@@ -31,6 +31,7 @@ public:
       std::function< void( const VarSyntaxNodeSP& ) > var_syntax_node = [ this ]( const VarSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const StatmentSyntaxNodeSP& ) > statment_syntax_node = [ this ]( const StatmentSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const ScopeSyntaxNodeSP& ) > scope_statment_syntax_node = [ this ]( const ScopeSyntaxNodeSP& node ) { default_handler( node ); };
+      std::function< void( const FunctionScopeSyntaxNodeSP& ) > function_scope_statment_syntax_node = [ this ]( const FunctionScopeSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const ArraySyntaxNodeSP& ) > array_syntax_node = [ this ]( const ArraySyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const ObjectSyntaxNodeSP& ) > object_syntax_node = [ this ]( const ObjectSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const ObjectPairSyntaxNodeSP& ) > object_pair_syntax_node = [ this ]( const ObjectPairSyntaxNodeSP& node ) { default_handler( node ); };
@@ -165,6 +166,11 @@ public:
    void visit( const ScopeSyntaxNodeSP& node ) override
    {
       mHandlers.scope_statment_syntax_node( node );
+   }
+
+   void visit( const FunctionScopeSyntaxNodeSP& node ) override
+   {
+      mHandlers.function_scope_statment_syntax_node( node );
    }
 
    void visit( const ArraySyntaxNodeSP& node ) override

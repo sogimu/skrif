@@ -8,6 +8,7 @@
 #include "nonterminals/function_call_syntax_node.h"
 #include "nonterminals/return_statment_syntax_node.h"
 #include "nonterminals/scope_statment_syntax_node.h"
+#include "nonterminals/function_scope_statment_syntax_node.h"
 #include "nonterminals/varible_assigment_statment_syntax_node.h"
 #include "nonterminals/varible_syntax_node.h"
 #include "nonterminals/while_statment_syntax_node.h"
@@ -21,7 +22,8 @@
 #include "abstract_syntax_tree.h"
 #include "control_flow_graph.h"
 #include "utils.h"
-#include "varible_store.h"
+// #include "varible_store.h"
+#include "VariableStore.h"
 #include "i_syntax_node.h"
 #include "copy_or_ref.h"
 
@@ -48,8 +50,8 @@ StackMachine::StackMachine( const ControlFlowGraph& cfg )
 
 Json StackMachine::exec()
 {
-   VaribleStore varible_store;
-   varible_store.pushScope();
+   VariableStore1 varible_store;
+   // varible_store.pushScope();
 
    std::deque< CopyOrRef<Json> > argument_stack;
    std::deque< FunctionCallSyntaxNodeSP > function_call_stack;
@@ -231,7 +233,7 @@ Json StackMachine::exec()
           else if( node->type() == BinExprSyntaxNode::Type::Equal )
           {
             const auto& result = lhs.get() == rhs.get();
-            std::cout << lhs.get() << " == " << rhs.get() << " = " << result << std::endl;
+            // std::cout << lhs.get() << " == " << rhs.get() << " = " << result << std::endl;
             argument_stack.push_back( CopyOrRef<Json>{ result } );
           }
           else if( node->type() == BinExprSyntaxNode::Type::Less )
@@ -266,6 +268,14 @@ Json StackMachine::exec()
           // argument_stack.clear();
           // std::cout << "Scope end" << std::endl;
        };
+       handlers.function_scope_statment_syntax_node = [ &varible_store ]( const FunctionScopeSyntaxNodeSP& scope )
+       {
+          // delete scope in a VaribleStore
+          varible_store.popScope();
+          varible_store.popScope();
+          // argument_stack.clear();
+          // std::cout << "Scope end" << std::endl;
+       };
        handlers.return_statment_syntax_node = [ &function_call_stack, &argument_stack, &varible_store, &get_value ]( const ReturnStatmentSyntaxNodeSP& return_statment )
        {
            auto& s = argument_stack;
@@ -275,12 +285,17 @@ Json StackMachine::exec()
            if( !argument_stack.empty() )
               argument_stack.pop_back();
            // const auto& v = value.get();
-           argument_stack.push_back( value.copy() );
+           // std::cout << "before return " << value.get() << std::endl;
+           const auto& c = value.copy();
+           // std::cout << "return " << c.get() << std::endl;
+           argument_stack.push_back( c );
        };
        handlers.print_statment_syntax_node = [ &argument_stack, &varible_store, &get_value ]( const PrintStatmentSyntaxNodeSP& print_statment )
        {
            auto& s = argument_stack;
            (void) s;
+           auto& d = varible_store;
+           (void) d;
            auto value = argument_stack.back();
            if( !argument_stack.empty() )
               argument_stack.pop_back();
@@ -354,6 +369,8 @@ Json StackMachine::exec()
           // const auto& source = varible_assigment->source();
           auto& s = argument_stack;
           (void) s;
+          // std::cout << "BEFORE ASSIGMENT" << std::endl;
+          // varible_store.print();
           
           if( check_type<NameSyntaxNode>( varible_assigment->operator[]( 0 ) ) )
           {
@@ -371,7 +388,8 @@ Json StackMachine::exec()
                   std::string context;
                   if( varible_assigment->context() == VaribleAssigmentStatmentSyntaxNode::Context::GLOBAL )
                   {
-                     varible_store[ varible_name.get_string() ] = varible_value;
+                     // varible_store[ varible_name.get_string() ] = varible_value;
+                     varible_store.write(varible_name.get_string(), varible_value, EnvScope::VaribleType::Global);
                      context = "Global";
                   }
                   else if( varible_assigment->context() == VaribleAssigmentStatmentSyntaxNode::Context::LOCAL )
@@ -396,7 +414,8 @@ Json StackMachine::exec()
                   std::string context;
                   if( varible_assigment->context() == VaribleAssigmentStatmentSyntaxNode::Context::GLOBAL )
                   {
-                     varible_store[ varible_name.get_string() ] = varible_value;
+                     // varible_store[ varible_name.get_string() ] = varible_value;
+                     varible_store.write(varible_name.get_string(), varible_value, EnvScope::VaribleType::Global);
                      context = "Global";
                   }
                   else if( varible_assigment->context() == VaribleAssigmentStatmentSyntaxNode::Context::LOCAL )
@@ -455,11 +474,13 @@ Json StackMachine::exec()
               //    }
               // }
           }
+          // std::cout << "AFTER ASSIGMENT" << std::endl;
           // varible_store.print();
        };
-       handlers.function_call_syntax_node = [ &function_call_stack ]( const FunctionCallSyntaxNodeSP& function_call )
+       handlers.function_call_syntax_node = [ &function_call_stack, &varible_store ]( const FunctionCallSyntaxNodeSP& function_call )
        { 
            function_call_stack.pop_back();
+           // varible_store.popScope();
        };
        const auto& visitor = std::make_shared< SyntaxNodeEmptyVisitor >( handlers );
    std::vector< ISyntaxNodeSP > stack;
@@ -482,6 +503,20 @@ Json StackMachine::exec()
         // create scope in a VaribleStore
         varible_store.pushScope();
         // std::cout << "Scope begin" << std::endl;
+     },
+     handlers.function_scope_statment_syntax_node =
+        [ &varible_store, &function_call_stack ]( const FunctionScopeSyntaxNodeSP& function_scope )
+
+     {
+          auto& s = varible_store;
+          (void) s;
+          auto function_ref = varible_store[ function_call_stack.back()->name() ];
+          if( function_ref.is_function() )
+          {
+              const auto& function_syntax_node = std::dynamic_pointer_cast<FunctionStatmentSyntaxNode>( function_ref.get_function().get_ast() );
+              varible_store.pushScope( function_ref.get_function().getScope() );
+          }
+          varible_store.pushScope();
      },
      handlers.if_statment_syntax_node = [ &children, &argument_stack, &get_value, &varible_store, &stack_dfs ]( const IfStatmentSyntaxNodeSP& if_statment )
      {
@@ -531,6 +566,8 @@ Json StackMachine::exec()
      };
      handlers.function_statment_syntax_node = [ &children, &varible_store ]( const FunctionStatmentSyntaxNodeSP& function )
      {
+        auto& d = varible_store;
+        (void) d;
         auto tokens = function->lexical_tokens();
         
         const auto& whole_childrens = DfsRange< ISyntaxNodeSP >{ function->Children() };
@@ -578,23 +615,34 @@ Json StackMachine::exec()
             current_col = token.col + token.length;
         }
 
-        const Json::Function f{function_text, function};
-        varible_store[ function->name() ] = f;
+        auto c = varible_store.getCurrentScope();
+          // std::cout << "current env: " << reinterpret_cast<uintptr_t>(c.get()) << std::endl;
+        const json::Function f{c, function_text, function};
+        auto& ss = varible_store;
+        (void) ss;
+          // std::cout << "FUNCTION_DECL" << std::endl;
+        varible_store.write( function->name(), f, EnvScope::VaribleType::Local);
+        // varible_store.print();
         
         children = {};
      };
      handlers.function_call_syntax_node = [ &function_call_stack, &argument_stack, &varible_store, &children ]( const FunctionCallSyntaxNodeSP& function_call )
      { 
+          // std::cout << "function_call " << function_call->name() << std::endl;
           auto& s = argument_stack;
           (void) s;
           auto& a = children;
           (void) a;
-          const auto& function_ref = varible_store[ function_call->name() ];
+          auto& b = varible_store;
+          (void) b;
+          auto function_ref = varible_store[ function_call->name() ];
           if( function_ref.is_function() )
           {
               const auto& function_syntax_node = std::dynamic_pointer_cast<FunctionStatmentSyntaxNode>( function_ref.get_function().get_ast() );
+              // varible_store.pushScope( function_ref.get_function().getScope() );
               children.push_back( function_syntax_node->scope() ); 
           }
+          // varible_store.print();
          
           function_call_stack.emplace_back( function_call );
      };
@@ -603,8 +651,10 @@ Json StackMachine::exec()
      //    const auto& source = varible_assigment->source();
      //    children = {source};
      // };
-     handlers.return_statment_syntax_node = [ &stack_dfs, &function_call_stack, &argument_stack ]( const ReturnStatmentSyntaxNodeSP& /* return_statment */ )
+     handlers.return_statment_syntax_node = [ &stack_dfs, &function_call_stack, &argument_stack, &varible_store ]( const ReturnStatmentSyntaxNodeSP& /* return_statment */ )
      {
+          // std::cout << "RETURN" << std::endl;
+          // varible_store.print();
          if( !stack_dfs.empty() )
          {
            auto& d = function_call_stack ;
@@ -630,6 +680,14 @@ Json StackMachine::exec()
       pre_func,
       post_func );
     
+    // varible_store.print();
+    // std::cout << "<<<< stack >>>>" << std::endl;
+    // for( const auto& elem : argument_stack )
+    // {
+    //   std::cout << "-> " << elem.get() << std::endl;
+    // }
+    // std::cout << "<<<< stack >>>>" << std::endl;
+
     Json result;
     if( !argument_stack.empty() )
     {

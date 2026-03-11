@@ -13,6 +13,9 @@ using NameSyntaxNodeSP = std::shared_ptr< NameSyntaxNode >;
 class ScopeSyntaxNode;
 using ScopeSyntaxNodeSP = std::shared_ptr< ScopeSyntaxNode >;
 
+class FunctionScopeSyntaxNode;
+using FunctionScopeSyntaxNodeSP = std::shared_ptr< FunctionScopeSyntaxNode >;
+
 class FunctionStatmentSyntaxNode : public ISyntaxNode, public std::enable_shared_from_this< FunctionStatmentSyntaxNode >
 {
 public:
@@ -25,7 +28,7 @@ public:
    bool compare( const ISyntaxNode& node ) const override;
 
    std::string name() const;
-   ScopeSyntaxNodeSP scope() const;
+   FunctionScopeSyntaxNodeSP scope() const;
    std::vector< NameSyntaxNodeSP > arguments() const;
    std::vector< LexicalTokens::LexicalToken > lexical_tokens() const override;
 

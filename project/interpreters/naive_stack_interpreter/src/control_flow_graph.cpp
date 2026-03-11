@@ -17,6 +17,7 @@
 #include "nonterminals/function_call_syntax_node.h"
 #include "nonterminals/return_statment_syntax_node.h"
 #include "nonterminals/scope_statment_syntax_node.h"
+#include "nonterminals/function_scope_statment_syntax_node.h"
 #include "nonterminals/varible_assigment_statment_syntax_node.h"
 #include "nonterminals/varible_syntax_node.h"
 #include "nonterminals/while_statment_syntax_node.h"
@@ -156,7 +157,7 @@ ControlFlowGraph::ControlFlowGraph( const AbstractSyntaxTree& ast )
                 }
                 scope_expressions.push_back( original_scope );
                 std::vector< LexicalTokens::LexicalToken > scope_lexical_tokens;
-                const auto& scope_statment = std::make_shared< ScopeSyntaxNode >( scope_expressions, scope_lexical_tokens );
+                const auto& scope_statment = std::make_shared< FunctionScopeSyntaxNode >( function->name(), scope_expressions, scope_lexical_tokens );
                 node->add_back( scope_statment );
                 // std::vector< LexicalTokens::LexicalToken > if_lexical_tokens;
                 // const auto& if_statment = std::make_shared< IfStatmentSyntaxNode >( while_condition, scope_statment, if_lexical_tokens );
