@@ -136,11 +136,23 @@ ctest --verbose
 ```
 
 ## Roadmap
-
+- [x] **Numbers**
+- [x] **Strings**
+- [x] **Arithmetic operations**
+- [x] **Control flow statments**
+- [x] **Variables**
+- [x] **Array**
+- [x] **Object**
+- [x] **Function call** Standart notation
+- [ ] **Function call** Member notation
+- [x] **Member expresson** Bracket notation
+- [ ] **Member expresson** dot notation
+- [ ] **Standart library** Console object
+- [ ] **Standard library** Math
+- [x] **Function closure**
+- [ ] **Module system** (import/export)
 - [ ] **Test262** compliance testing
 - [ ] **Debugger** with breakpoints
-- [ ] **Module system** (import/export)
-- [ ] **Standard library** (Math, String, Array)
 
 ## License
 
