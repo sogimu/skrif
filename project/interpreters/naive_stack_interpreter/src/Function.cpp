@@ -30,5 +30,10 @@ Function::~Function()
 
 std::shared_ptr<EnvScope> Function::getScope() const
 {
-    return mOuter_env_scope.lock();
+    return mOuter_env_scope;
+}
+
+void Function::clearScope()
+{
+    mOuter_env_scope = nullptr;
 }

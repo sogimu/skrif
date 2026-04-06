@@ -38,6 +38,47 @@
 #include <vector>
 #include <variant>
 
+static void severParentChainCycle(std::shared_ptr<EnvScope> scope, EnvScope* target)
+{
+    auto current = scope;
+    while (current) {
+        auto parent = current->getParent();
+        if (parent.get() == target) {
+            current->set_parent(nullptr);
+            return;
+        }
+        current = parent;
+    }
+}
+
+static void breakCyclesInJson(Json& value, EnvScope* dying_scope)
+{
+    if (value.is_function()) {
+        auto& f = value.get_function();
+        auto closure = f.getScope();
+        if (!closure)
+            return;
+        if (closure.get() == dying_scope)
+            f.clearScope();
+        else
+            severParentChainCycle(closure, dying_scope);
+    } else if (value.is_array()) {
+        for (auto& el : value.get_array())
+            breakCyclesInJson(el, dying_scope);
+    } else if (value.is_object()) {
+        for (auto& [k, v] : value.get_object())
+            breakCyclesInJson(v, dying_scope);
+    }
+}
+
+static void breakCycles(EnvScope* dying_scope)
+{
+    if (!dying_scope) return;
+    for (auto it = dying_scope->begin(EnvScope::VaribleType::Local);
+         it != dying_scope->end(EnvScope::VaribleType::Local); ++it)
+        breakCyclesInJson(it->second, dying_scope);
+}
+
 StackMachine::StackMachine( const ControlFlowGraph& cfg )
     : mCfg{ cfg }
 {
@@ -269,11 +310,14 @@ Json StackMachine::exec()
        };
        handlers.scope_statment_syntax_node = [ &varible_store ]( const ScopeSyntaxNodeSP& scope )
        {
+          breakCycles( varible_store.getCurrentScope().get() );
           varible_store.popScope();
        };
        handlers.function_scope_statment_syntax_node = [ &varible_store, &function_scope_stack ]( const FunctionScopeSyntaxNodeSP& scope )
        {
           function_scope_stack.pop_back();
+          // Break cycles only in the owned local scope, not in the borrowed closure scope
+          breakCycles( varible_store.getCurrentScope().get() );
           varible_store.popScope();
           varible_store.popScope();
        };
@@ -661,7 +705,6 @@ Json StackMachine::exec()
         auto c = varible_store.getCurrentScope();
           // std::cout << "current env: " << reinterpret_cast<uintptr_t>(c.get()) << std::endl;
         const json::Function f{c, function_text, function};
-        clousures1[function->name()] = c;
         auto& ss = varible_store;
         (void) ss;
         varible_store.write( function->name(), f, EnvScope::VaribleType::Local);
@@ -719,8 +762,5 @@ Json StackMachine::exec()
         argument_stack.pop_back();
     }
 
-    // std::cout << "CLEAR clousures begin" << std::endl;
-    clousures1.clear();
-    // std::cout << "CLEAR clousures end" << std::endl;
     return result;
 }
