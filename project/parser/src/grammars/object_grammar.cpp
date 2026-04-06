@@ -297,7 +297,9 @@ Object::Object()
             {
                if( state == State::COLON )
                {
-                  if( lookahead && check_type< ColonSyntaxNode >( lookahead ) ||
+                  auto& s = lookahead;
+                  (void) lookahead;
+                  if( lookahead && check_type< CommaSyntaxNode >( lookahead ) ||
                                    check_type< CloseCurlyBracketSyntaxNode >( lookahead ) ) 
                   {
                      value = node;

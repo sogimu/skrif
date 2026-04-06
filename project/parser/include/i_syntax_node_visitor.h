@@ -7,6 +7,7 @@
 #include "terminals/close_square_bracket_syntax_node.h"
 #include "terminals/eol_syntax_node.h"
 #include "terminals/equal_syntax_node.h"
+#include "terminals/not_syntax_node.h"
 #include "terminals/f_syntax_node.h"
 #include "terminals/if_syntax_node.h"
 #include "terminals/else_syntax_node.h"
@@ -87,6 +88,7 @@ public:
    virtual void visit( const PrintStatmentSyntaxNodeSP& ) = 0;
    virtual void visit( const PrintSyntaxNodeSP& ) = 0;
    virtual void visit( const EqualSyntaxNodeSP& ) = 0;
+   virtual void visit( const NotSyntaxNodeSP& ) = 0;
    virtual void visit( const LessSyntaxNodeSP& ) = 0;
    virtual void visit( const MoreSyntaxNodeSP& ) = 0;
    virtual void visit( const IfSyntaxNodeSP& ) = 0;

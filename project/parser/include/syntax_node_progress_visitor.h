@@ -77,6 +77,7 @@ public:
       std::function< HandlerReturn( const State& state, const CommaSyntaxNodeSP& ) > comma_syntax_node = [ this ] ( const State& state,  const CommaSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const PrintSyntaxNodeSP& ) > print_syntax_node = [ this ] ( const State& state,  const PrintSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const EqualSyntaxNodeSP& ) > equal_syntax_node = [ this ] ( const State& state,  const EqualSyntaxNodeSP& node ) { return default_handler( state, node ); };
+      std::function< HandlerReturn( const State& state, const NotSyntaxNodeSP& ) > not_syntax_node = [ this ] ( const State& state,  const NotSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const LessSyntaxNodeSP& ) > less_syntax_node = [ this ] ( const State& state,  const LessSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const MoreSyntaxNodeSP& ) > more_syntax_node = [ this ] ( const State& state,  const MoreSyntaxNodeSP& node ) { return default_handler( state, node ); };
       std::function< HandlerReturn( const State& state, const IfSyntaxNodeSP& ) > if_syntax_node = [ this ] ( const State& state,  const IfSyntaxNodeSP& node ) { return default_handler( state, node ); };
@@ -314,6 +315,11 @@ public:
    void visit( const EqualSyntaxNodeSP& node ) override
    {
       mHandlers.call( &Handlers::equal_syntax_node, mHandlers.state(), node );
+   }
+
+   void visit( const NotSyntaxNodeSP& node ) override
+   {
+      mHandlers.call( &Handlers::not_syntax_node, mHandlers.state(), node );
    }
 
    void visit( const LessSyntaxNodeSP& node ) override

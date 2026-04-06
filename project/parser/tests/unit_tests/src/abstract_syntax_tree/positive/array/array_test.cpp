@@ -70,8 +70,9 @@ TEST( SYNTAX_TREE_ARRAY, FROM_ONE_FUNCTION_CALL )
    const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
 
    // ASSERT
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[2] );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{} );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[2] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{} );
    
    std::vector< LexicalTokens::LexicalToken > array_lexical_tokens
    {
@@ -96,10 +97,12 @@ TEST( SYNTAX_TREE_ARRAY, FROM_TWO_FUNCTION_CALL )
 
    // ASSERT
    const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[2] );
-   const auto& function_call0 = std::make_shared< FunctionCallSyntaxNode >( name0, std::vector< ISyntaxNodeSP >{} );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
+   const auto& function_call0 = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{} );
    
    const auto& name1 = std::make_shared< NameSyntaxNode >( lexical_tokens[6] );
-   const auto& function_call1 = std::make_shared< FunctionCallSyntaxNode >( name1, std::vector< ISyntaxNodeSP >{} );
+   const auto& varible1 = std::make_shared< VaribleSyntaxNode >( name1, name1->lexical_tokens() );
+   const auto& function_call1 = std::make_shared< FunctionCallSyntaxNode >( varible1, std::vector< ISyntaxNodeSP >{} );
 
    std::vector< LexicalTokens::LexicalToken > array_lexical_tokens
    {

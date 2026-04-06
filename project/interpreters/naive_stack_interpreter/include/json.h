@@ -40,7 +40,7 @@ private:
     std::string* str_ = nullptr;
     std::vector<Json>* array_ = nullptr;
     std::map<std::string, Json>* object_ = nullptr;
-    json::Function function_ = json::Function(nullptr, "", nullptr);
+    json::Function *function_ = nullptr;
 
     void clear() {
         switch(type_) {
@@ -52,6 +52,9 @@ private:
                 break;
             case Type::Object:
                 delete object_;
+                break;
+            case Type::Function:
+                delete function_;
                 break;
             default:
                 break;
@@ -68,7 +71,7 @@ private:
             case Type::String: str_ = new std::string(*other.str_); break;
             case Type::Array: array_ = new std::vector<Json>(*other.array_); break;
             case Type::Object: object_ = new std::map<std::string, Json>(*other.object_); break;
-            case Type::Function: function_ = other.function_; break;
+            case Type::Function: function_ = new json::Function( *other.function_ ); break;
             default: break;
         }
     }
@@ -84,8 +87,8 @@ public:
     Json(const std::string& v) : type_(Type::String), str_(new std::string(v)) {}
     Json(const std::vector<Json>& v) : type_(Type::Array), array_(new std::vector<Json>(v)) {}
     Json(const std::map<std::string, Json>& v) : type_(Type::Object), object_(new std::map<std::string, Json>(v)) {}
-    Json(const json::Function& v) : type_(Type::Function), function_{v} {}
-    Json(json::Function&& v) : type_(Type::Function), function_{std::move(v)} {}
+    Json(const json::Function& v) : type_(Type::Function), function_( new json::Function(v) ) {}
+    // Json(json::Function&& v) : type_(Type::Function), function_{std::move(v)} {}
 
     // Копирование
     Json(const Json& other) {
@@ -107,12 +110,13 @@ public:
         str_ = other.str_;
         array_ = other.array_;
         object_ = other.object_;
-        function_ = std::move(other.function_);
+        function_ = other.function_;
 
         other.type_ = Type::Null;
         other.str_ = nullptr;
         other.array_ = nullptr;
         other.object_ = nullptr;
+        other.function_ = nullptr;
     }
 
     Json& operator=(Json&& other) noexcept {
@@ -124,13 +128,13 @@ public:
             str_ = other.str_;
             array_ = other.array_;
             object_ = other.object_;
-            function_ = std::move(other.function_);
+            function_ = other.function_;
 
             other.type_ = Type::Null;
             other.str_ = nullptr;
             other.array_ = nullptr;
             other.object_ = nullptr;
-            other.function_ = json::Function(nullptr, "", nullptr);
+            other.function_ = nullptr;
         }
         return *this;
     }
@@ -161,8 +165,8 @@ public:
     inline std::vector<Json>& get_array() { assert(is_array()); return *array_; }
     inline const std::map<std::string, Json>& get_object() const { assert(is_object()); return *object_; }
     inline std::map<std::string, Json>& get_object() { assert(is_object()); return *object_; }
-    inline const json::Function& get_function() const { assert(is_function()); return function_; }
-    inline json::Function& get_function() { assert(is_function()); return function_; }
+    inline const json::Function& get_function() const { assert(is_function()); return *function_; }
+    inline json::Function& get_function() { assert(is_function()); return *function_; }
 
     // Операторы индексирования (для объекта и массива)
           Json& operator[](size_t idx)       { assert(is_array()); return (*array_)[idx]; }
@@ -447,7 +451,8 @@ inline std::ostream& operator<<(std::ostream& os, const Json& j) {
             os << (j.get_bool() ? "true" : "false");
             break;
         case Json::Type::Function:
-            os << "{\"type\":\"function\",\"text\":\"" << j.get_function().get_text() << "\"env\":" << reinterpret_cast<uintptr_t>(j.get_function().getScope().get()) << "\"" << "\"is_strong\":" << j.get_function().isStrongReference() << "\"}";
+            // os << "{\"type\":\"function\",\"text\":\"" << j.get_function().get_text() << "\"env\":" << reinterpret_cast<uintptr_t>(j.get_function().getScope().get()) << "\"" << "\"is_strong\":" << j.get_function().isStrongReference() << "\"}";
+            os << "{\"type\":\"function\",\"text\":\"" << j.get_function().get_text() << "\"env\":" << reinterpret_cast<uintptr_t>(j.get_function().getScope().get()) << "\"" << "\"}";
             break;
         case Json::Type::String: {
             os << '"';

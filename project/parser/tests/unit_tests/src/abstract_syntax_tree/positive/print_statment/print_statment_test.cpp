@@ -57,8 +57,9 @@ TEST( SYNTAX_TREE_PRINT, FUNCTION_CALL )
    const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
 
    // ASSERT
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{} );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{} );
    
    const auto& print = std::make_shared< PrintStatmentSyntaxNode >( function_call );
    

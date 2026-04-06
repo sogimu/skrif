@@ -159,8 +159,9 @@ TEST( SYNTAX_TREE_MEMBER_EXPRESSION, INDEX_BY_FUNCTION_CALL )
    const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
    
    const auto& name1 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible1 = std::make_shared< VaribleSyntaxNode >( name1, name1->lexical_tokens() );
 
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name1, std::vector<ISyntaxNodeSP>{} );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible1, std::vector<ISyntaxNodeSP>{} );
    std::vector< LexicalTokens::LexicalToken > member_expression_lexical_tokens{ lexical_tokens[2], lexical_tokens[6] };
    const auto& member_expression = std::make_shared< MemberExpressionSyntaxNode >( varible0, function_call, member_expression_lexical_tokens );
   

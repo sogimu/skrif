@@ -517,10 +517,11 @@ TEST( SYNTAX_TREE_ARITHMETIC, F_PLUS_FUNCTION_CALL )
    const auto& d0 = std::make_shared< IntSyntaxNode >( lexical_tokens[1] );
    const auto& f0 = std::make_shared< FSyntaxNode >( d0 );
 
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
    const auto& d1 = std::make_shared< IntSyntaxNode >( lexical_tokens[5] );
    const auto& f1 = std::make_shared< FSyntaxNode >( d1 );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{ f1 } );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{ f1 } );
    
    std::vector< LexicalTokens::LexicalToken > bin_expr_lexical_tokens{ lexical_tokens[2] };
    const auto& bin_expr = std::make_shared< BinExprSyntaxNode >( BinExprSyntaxNode::Type::Addition, f0, function_call, bin_expr_lexical_tokens );

@@ -148,6 +148,7 @@ MemberExpression::MemberExpression()
                                     check_type<CloseCurlyBracketSyntaxNode>( lookahead ) ||
                                     check_type<CloseSquareBracketSyntaxNode>( lookahead ) ||
                                     check_type<OpenSquareBracketSyntaxNode>( lookahead ) ||
+                                    check_type<OpenCircleBracketSyntaxNode>( lookahead ) ||
                                     check_type<EqualSyntaxNode>( lookahead ) ||
                                     check_type<PlusSyntaxNode>( lookahead ) ||
                                     check_type<MinusSyntaxNode>( lookahead ) ||
@@ -155,6 +156,7 @@ MemberExpression::MemberExpression()
                                     check_type<SlashSyntaxNode>( lookahead ) ||
                                     check_type<LessSyntaxNode>( lookahead ) ||
                                     check_type<MoreSyntaxNode>( lookahead ) ||
+                                    check_type<NotSyntaxNode>( lookahead ) ||
                                     check_type<CommaSyntaxNode>( lookahead ) ) )
                  {
                      close_square_bracket = node;

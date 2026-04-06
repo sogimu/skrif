@@ -57,6 +57,7 @@ public:
       std::function< void( const CommaSyntaxNodeSP& ) > comma_syntax_node = [ this ]( const CommaSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const PrintSyntaxNodeSP& ) > print_syntax_node = [ this ]( const PrintSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const EqualSyntaxNodeSP& ) > equal_syntax_node = [ this ]( const EqualSyntaxNodeSP& node ) { default_handler( node ); };
+      std::function< void( const NotSyntaxNodeSP& ) > not_syntax_node = [ this ]( const NotSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const LessSyntaxNodeSP& ) > less_syntax_node = [ this ]( const LessSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const MoreSyntaxNodeSP& ) > more_syntax_node = [ this ]( const MoreSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const IfSyntaxNodeSP& ) > if_syntax_node = [ this ]( const IfSyntaxNodeSP& node ) { default_handler( node ); };
@@ -256,6 +257,11 @@ public:
    void visit( const EqualSyntaxNodeSP& node ) override
    {
       mHandlers.equal_syntax_node( node );
+   }
+
+   void visit( const NotSyntaxNodeSP& node ) override
+   {
+      mHandlers.not_syntax_node( node );
    }
 
    void visit( const LessSyntaxNodeSP& node ) override

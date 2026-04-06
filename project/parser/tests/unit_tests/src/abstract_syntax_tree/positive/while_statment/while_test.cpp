@@ -159,10 +159,11 @@ TEST( SYNTAX_TREE_WHILE, FUNCTION_CALL )
    const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
 
    // ASSERT
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
    const auto& number = std::make_shared< IntSyntaxNode >( lexical_tokens[5] );
    const auto& f = std::make_shared< FSyntaxNode >( number );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{ f } );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{ f } );
    
    std::vector< LexicalTokens::LexicalToken > scope_lexical_tokens{ lexical_tokens[8], lexical_tokens[9]  };
    const auto& scope = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {}, scope_lexical_tokens );
@@ -188,10 +189,11 @@ TEST( SYNTAX_TREE_WHILE, IF_SEMICOLON )
    const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
 
    // ASSERT
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
    const auto& number = std::make_shared< IntSyntaxNode >( lexical_tokens[5] );
    const auto& f = std::make_shared< FSyntaxNode >( number );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{ f } );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{ f } );
    
    std::vector< LexicalTokens::LexicalToken > scope_lexical_tokens{ lexical_tokens[8], lexical_tokens[9]  };
    const auto& scope = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {}, scope_lexical_tokens );

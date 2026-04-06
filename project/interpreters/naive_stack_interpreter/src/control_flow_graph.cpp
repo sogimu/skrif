@@ -167,14 +167,30 @@ ControlFlowGraph::ControlFlowGraph( const AbstractSyntaxTree& ast )
             else if( IsNode< FunctionCallSyntaxNode >( node ) )
             {
                const auto& function_call = std::dynamic_pointer_cast< FunctionCallSyntaxNode >(node);
-               auto argument_index = node->Children().size()-1;
+               // auto argument_index = node->Children().size()-1;
                
               std::vector< LexicalTokens::LexicalToken > scope_lexical_tokens;
               std::vector<ISyntaxNodeSP> scope_expressions;
-        
-              const auto& function_call_arguments = function_call->arguments();
+       
+              // if( function_call->type() == FunctionCallSyntaxNode::Type::BY_NAME )
+              // {
+              //     const auto& name_n = *function_call->rbegin();  
+              //  const auto& name = std::dynamic_pointer_cast< NameSyntaxNode >(name_n);
+              //     function_call->remove(function_call->Children().size()-1);
+              //    const auto& varible = std::make_shared< VaribleSyntaxNode >( name, name->lexical_tokens() );
+              //     function_call->add_back(varible);
+              // }
+              // const auto& function_call_arguments = function_call->arguments();
               
-              node->remove(0);
+              // node->remove(0);
+               // const auto& condition = node->operator[](0);
+               //
+               //  if( auto if_statment_it = std::find( parent_of_statment->begin(), parent_of_statment->end(), node );
+               //      if_statment_it != parent_of_statment->end() )
+               //  {
+               //     parent_of_statment->insert(if_statment_it, condition);          
+               //  }
+               // node->remove(0);
             }
          },
          get_children_reverse_iterators );
