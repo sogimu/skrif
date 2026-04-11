@@ -20,6 +20,7 @@ enum class Token_Type
    RETURN,
    RETURN_STATMENT,
    EQUAL,
+   NOT,
    LESS,
    MORE,
    PRINT,

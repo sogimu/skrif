@@ -15,6 +15,7 @@ public:
     Multiply,
     Division,
     Equal,
+    NotEqual,
     Less,
     LessEqual,
     More,

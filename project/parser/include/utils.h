@@ -190,7 +190,7 @@ void iterative_managed_dfs( const Node& start, PreFunc pre_func, PostFunc post_f
       }
       else
       {
-         post_func( node );
+         post_func( node, stack_dfs );
          // stack.pop();
          // stack_dfs.pop();
       }
@@ -765,6 +765,12 @@ public:
          mResult = true;
    }
 
+   void visit( const NotSyntaxNodeSP& /* node */ ) override
+   {
+      if constexpr( std::is_same_v< T, NotSyntaxNode > )
+         mResult = true;
+   }
+
    void visit( const LessSyntaxNodeSP& /* node */ ) override
    {
       if constexpr( std::is_same_v< T, LessSyntaxNode > )
@@ -931,6 +937,11 @@ static std::string to_string( const ISyntaxNodeSP& node )
               type = "Equal";
            };
            break;
+           case BinExprSyntaxNode::Type::NotEqual:
+           {
+              type = "NotEqual";
+           };
+           break;
            case BinExprSyntaxNode::Type::Less:
            {
               type = "Less";
@@ -986,6 +997,7 @@ static std::string to_string( const ISyntaxNodeSP& node )
         handlers.varible_syntax_node = [ &s ]( const VaribleSyntaxNodeSP& node ) { s << "{" << "VARIBLE" << '(' << node->name() << ')' << "}"; };
         handlers.print_statment_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "PRINT_STATMENT" << "}"; };
         handlers.equal_syntax_node = [ &s ]( const ISyntaxNodeSP& node ) { s << "{" << "EQUAL " << node->lexical_tokens()[0] << "}"; };
+        handlers.not_syntax_node = [ &s ]( const ISyntaxNodeSP& node ) { s << "{" << "NOT " << node->lexical_tokens()[0] << "}"; };
         handlers.less_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "LESS" << "}"; };
         handlers.more_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "MORE" << "}"; };
         handlers.if_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "IF" << "}"; };
@@ -995,7 +1007,7 @@ static std::string to_string( const ISyntaxNodeSP& node )
         handlers.while_statment_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "WHILE_STATMENT" << "}"; };
         handlers.goto_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "GOTO" << "}"; };
         handlers.function_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "FUNCTION" << "}"; };
-        handlers.function_call_syntax_node = [ &s, print_lexical_tokens ]( const FunctionCallSyntaxNodeSP& node ) { s << "{" << "FUNCTION_CALL" << " (" << node->name() << ")" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}"   << "}"; };
+        handlers.function_call_syntax_node = [ &s, print_lexical_tokens ]( const FunctionCallSyntaxNodeSP& node ) { s << "{" << "FUNCTION_CALL" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}"   << "}"; };
         handlers.function_statment_syntax_node = [ &s, print_lexical_tokens ]( const FunctionStatmentSyntaxNodeSP& node )
         { s << "{" << "FUNCTION_STATMENT" << " (" << node->name() << ")" << " {" << print_lexical_tokens( node->lexical_tokens() ) << "}" << "}"; };
         handlers.print_syntax_node = [ &s ]( const ISyntaxNodeSP& ) { s << "{" << "PRINT" << "}"; };

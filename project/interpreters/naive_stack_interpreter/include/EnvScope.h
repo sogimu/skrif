@@ -19,7 +19,7 @@ public:
     };
 
     EnvScope();
-    EnvScope( const std::shared_ptr<EnvScope>& parent = nullptr );
+    EnvScope( const std::shared_ptr<EnvScope>& parent );
     ~EnvScope();
     void set_parent( const std::shared_ptr<EnvScope>& parent );
 

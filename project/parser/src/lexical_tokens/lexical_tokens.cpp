@@ -140,6 +140,11 @@ LexicalTokens::LexicalTokens( const std::string& text )
            terminal_token_type = Token_Type::EQUAL;
         };
         break;
+        case '!':
+        {
+           terminal_token_type = Token_Type::NOT;
+        };
+        break;
         case '<':
         {
            terminal_token_type = Token_Type::LESS;

@@ -4,42 +4,57 @@
 #include "is_last_nodes.h"
 #include "syntax_node_empty_visitor.h"
 #include "terminals/name_syntax_node.h"
+#include "nonterminals/member_expression_syntax_node.h"
 
 FunctionCallSyntaxNode::FunctionCallSyntaxNode( const FunctionCallSyntaxNode& function_call_syntax_node )
    : ISyntaxNode{ Token_Type::FUNCTION_CALL }
-   , mName{ function_call_syntax_node.name() }
-   , mSignature{ function_call_syntax_node.mSignature }
+   // , mName{ function_call_syntax_node.name() }
+   // , mSignature{ function_call_syntax_node.mSignature }
 {
    mTokens = function_call_syntax_node.lexical_tokens();
 }
 
-FunctionCallSyntaxNode::FunctionCallSyntaxNode( const std::string& name )
-   : ISyntaxNode{ Token_Type::FUNCTION_CALL }
-   , mName{ name }
-{
-}
+// FunctionCallSyntaxNode::FunctionCallSyntaxNode( const std::string& name )
+//    : ISyntaxNode{ Token_Type::FUNCTION_CALL }
+//    , mName{ name }
+// {
+// }
 
-FunctionCallSyntaxNode::FunctionCallSyntaxNode( const std::string& name, const std::vector< ISyntaxNodeSP >& arguments )
-   : ISyntaxNode{ Token_Type::FUNCTION_CALL }
-   , mName{ name }
-   , mSignature{ mName, arguments.size() }
-{
-   for( const auto& argument : arguments )
-   {
-      add_back( argument );
-   }
-}
+// FunctionCallSyntaxNode::FunctionCallSyntaxNode( const std::string& name, const std::vector< ISyntaxNodeSP >& arguments )
+//    : ISyntaxNode{ Token_Type::FUNCTION_CALL }
+//    , mName{ name }
+//    // , mSignature{ mName, arguments.size() }
+// {
+//    for( const auto& argument : arguments )
+//    {
+//       add_back( argument );
+//    }
+// }
 
-FunctionCallSyntaxNode::FunctionCallSyntaxNode( const NameSyntaxNodeSP& name_syntax_node, const std::vector< ISyntaxNodeSP >& arguments_syntax_nodes )
+FunctionCallSyntaxNode::FunctionCallSyntaxNode( const VaribleSyntaxNodeSP& varible_syntax_node, const std::vector< ISyntaxNodeSP >& arguments_syntax_nodes )
    : ISyntaxNode{ Token_Type::FUNCTION_CALL }
-   , mName{ name_syntax_node->value() }
-   , mSignature{ mName, arguments_syntax_nodes.size() }
+   // , mType{ FunctionCallSyntaxNode::Type::BY_NAME }
+   // , mName{ name_syntax_node->value() }
+   // , mSignature{ mName, arguments_syntax_nodes.size() }
 {
-   add_back(name_syntax_node);
    for( const auto& argument : arguments_syntax_nodes )
    {
       add_back( argument );
    }
+   add_back( varible_syntax_node );
+}
+
+FunctionCallSyntaxNode::FunctionCallSyntaxNode( const MemberExpressionSyntaxNodeSP& member_expression_syntax_node, const std::vector< ISyntaxNodeSP >& arguments_syntax_nodes )
+   : ISyntaxNode{ Token_Type::FUNCTION_CALL }
+   // , mType{ FunctionCallSyntaxNode::Type::BY_OPERATION_EXPRESSION }
+   // , mName{ name_syntax_node->value() }
+   // , mSignature{ mName, arguments_syntax_nodes.size() }
+{
+   for( const auto& argument : arguments_syntax_nodes )
+   {
+      add_back( argument );
+   }
+   add_back( member_expression_syntax_node );
 }
 
 void FunctionCallSyntaxNode::accept( const ISyntaxNodeVisitorSP& visitor )
@@ -66,8 +81,8 @@ bool FunctionCallSyntaxNode::compare( const ISyntaxNode& node ) const
             return;
          }
       }
-      if( node->name() != this->name() )
-        return;
+      // if( node->name() != this->name() )
+      //   return;
       is_equal = true;
    };
    const auto& visitor = std::make_shared< SyntaxNodeEmptyVisitor >( handlers );
@@ -76,16 +91,16 @@ bool FunctionCallSyntaxNode::compare( const ISyntaxNode& node ) const
    return is_equal;
 }
 
-std::string FunctionCallSyntaxNode::name() const
-{
-   return mName;
-}
-
-std::pair<std::string, size_t> FunctionCallSyntaxNode::signature() const
-{
-  return mSignature;
-}
-
+// FunctionCallSyntaxNode::Type FunctionCallSyntaxNode::type() const
+// {
+//     return mType;
+// }
+//
+// std::string FunctionCallSyntaxNode::name() const
+// {
+//    return mName;
+// }
+//
 std::vector< ISyntaxNodeSP > FunctionCallSyntaxNode::arguments() const
 {
     std::vector< ISyntaxNodeSP > result;

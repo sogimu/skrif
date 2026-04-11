@@ -34,6 +34,7 @@ set(HEADERS
     include/syntax_nodes/terminals/return_syntax_node.h
     include/syntax_nodes/terminals/print_syntax_node.h
     include/syntax_nodes/terminals/equal_syntax_node.h
+    include/syntax_nodes/terminals/not_syntax_node.h
     include/syntax_nodes/terminals/less_syntax_node.h
     include/syntax_nodes/terminals/more_syntax_node.h
     include/syntax_nodes/terminals/open_curly_bracket_syntax_node.h
@@ -102,6 +103,7 @@ set(SOURCES
     src/syntax_nodes/terminals/comma_syntax_node.cpp
     src/syntax_nodes/terminals/print_syntax_node.cpp
     src/syntax_nodes/terminals/equal_syntax_node.cpp
+    src/syntax_nodes/terminals/not_syntax_node.cpp
     src/syntax_nodes/terminals/less_syntax_node.cpp
     src/syntax_nodes/terminals/more_syntax_node.cpp
     src/syntax_nodes/terminals/open_curly_bracket_syntax_node.cpp

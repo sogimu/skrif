@@ -41,19 +41,19 @@ void VariableStore1::popScope()
     // auto parent = mCurrentEnvScope->getParent();
     // if (parent)
     // {
-    if( mEnvScopeStack.size() == 1 )
-    {
-        auto& last_scope = mEnvScopeStack.back();
-        for ( auto it = last_scope->begin(EnvScope::VaribleType::Local) ; it != last_scope->end(EnvScope::VaribleType::Local); ++it)
-        {
-            auto& value = *it;
-            if( value.second.is_function() )
-            {
-                auto& func = value.second.get_function();
-                func.makeWeakReference();
-            }
-        }
-    }
+    // if( mEnvScopeStack.size() == 1 )
+    // {
+    //     auto& last_scope = mEnvScopeStack.back();
+        // for ( auto it = last_scope->begin(EnvScope::VaribleType::Local) ; it != last_scope->end(EnvScope::VaribleType::Local); ++it)
+        // {
+            // auto& value = *it;
+            // if( value.second.is_function() )
+            // {
+            //     auto& func = value.second.get_function();
+            //     // func.makeWeakReference();
+            // }
+        // }
+    // }
         mEnvScopeStack.pop_back();
     // }
     // else

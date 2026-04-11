@@ -201,6 +201,44 @@ Scope::Scope()
                                                            }
                                                            return { state, Impact::NO_MOVE };
                                                         };
+                                                        handlers.bin_expr_syntax_node = [ &expressions ]( const State& state, const BinExprSyntaxNodeSP& node ) -> HandlerReturn
+                                                        {
+                                                           if( state == State::OPEN_CURLY_BRACKET )
+                                                           {
+                                                              expressions.emplace_back( node );
+                                                              return { State::STATMENT, Impact::MOVE };
+                                                           }
+                                                           else if( state == State::STATMENT )
+                                                           {
+                                                              expressions.emplace_back( node );
+                                                              return { State::STATMENT, Impact::MOVE };
+                                                           }
+                                                           else if( state == State::SCOPE_STATMENT )
+                                                           {
+                                                              expressions.emplace_back( node );
+                                                              return { State::STATMENT, Impact::MOVE };
+                                                           }
+                                                           return { state, Impact::NO_MOVE };
+                                                        };
+                                                        handlers.un_expr_syntax_node = [ &expressions ]( const State& state, const UnExprSyntaxNodeSP& node ) -> HandlerReturn
+                                                        {
+                                                           if( state == State::OPEN_CURLY_BRACKET )
+                                                           {
+                                                              expressions.emplace_back( node );
+                                                              return { State::STATMENT, Impact::MOVE };
+                                                           }
+                                                           else if( state == State::STATMENT )
+                                                           {
+                                                              expressions.emplace_back( node );
+                                                              return { State::STATMENT, Impact::MOVE };
+                                                           }
+                                                           else if( state == State::SCOPE_STATMENT )
+                                                           {
+                                                              expressions.emplace_back( node );
+                                                              return { State::STATMENT, Impact::MOVE };
+                                                           }
+                                                           return { state, Impact::NO_MOVE };
+                                                        };
                                                         handlers.scope_statment_syntax_node = [ &expressions ]( const State& state, const ScopeSyntaxNodeSP& node ) -> HandlerReturn
                                                         {
                                                            if( state == State::OPEN_CURLY_BRACKET )

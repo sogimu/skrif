@@ -42,35 +42,35 @@ std::map< std::string, Json >::iterator EnvScope::end(VaribleType varible_type)
 void EnvScope::write(const std::string& key, const Json& value, VaribleType varible_type)
 {
     auto current_scope = this->shared_from_this();
-    auto value_copy = value;
-    if( value_copy.is_function() )
-    {
-        auto& func = value_copy.get_function();
-        if( func.getScope() == shared_from_this() )
-        {
-            func.makeWeakReference();
-        }
-        else 
-        {
-        
-            func.makeStrongReference();
-        }
-    }
+    // auto value_copy = value;
+    // if( value_copy.is_function() )
+    // {
+        // auto& func = value_copy.get_function();
+        // if( func.getScope() == shared_from_this() )
+        // {
+        //     func.makeWeakReference();
+        // }
+        // else 
+        // {
+        //
+        //     func.makeStrongReference();
+        // }
+    // }
     if( varible_type == VaribleType::Global )
     {
         auto has_key = contains( key );
         if( has_key )
         {
-            this->operator[](key) = std::move(value_copy);
+            this->operator[](key) = value;//std::move(value_copy);
         }
         else
         {
-            current_scope->mVaribleByKey[ key ] = std::move(value_copy);
+            current_scope->mVaribleByKey[ key ] = value;//std::move(value_copy);
         }
     }
     else
     {
-        current_scope->mVaribleByKey[ key ] = std::move(value_copy);
+        current_scope->mVaribleByKey[ key ] = value;//std::move(value_copy);
     }
 }
 
@@ -150,7 +150,8 @@ void EnvScope::print() const
             std::cout << "    " << pair.first << " = ";
             if( pair.second.is_function() )
             {
-                std::cout << "Function object " << pair.second.get_function().get_text() << "env: " << reinterpret_cast<uintptr_t>(pair.second.get_function().getScope().get()) << (pair.second.get_function().isStrongReference() ? " with strong ref" :  " with weak ref");
+                // std::cout << "Function object " << pair.second.get_function().get_text() << "env: " << reinterpret_cast<uintptr_t>(pair.second.get_function().getScope().get()) << (pair.second.get_function().isStrongReference() ? " with strong ref" :  " with weak ref");
+                std::cout << "Function object " << pair.second.get_function().get_text() << "env: " << reinterpret_cast<uintptr_t>(pair.second.get_function().getScope().get());
             }
             else
             {

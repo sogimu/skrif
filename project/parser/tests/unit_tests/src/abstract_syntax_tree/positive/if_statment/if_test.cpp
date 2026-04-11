@@ -37,6 +37,81 @@ TEST( SYNTAX_TREE_IF, F_EQUAL_F )
    EXPECT_EQ( syntax_tree, expected_syntax_tree );
 }
 
+TEST( SYNTAX_TREE_IF, F_NOT_EQUAL_F )
+{
+   // ARRANGE
+   const auto& input = R"""(
+    if(1!=1)
+    {
+
+    }
+   )""";
+
+   // ACT
+   const auto& lexical_tokens = LexicalTokens( input );
+   const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
+
+   // ASSERT
+   const auto& d0 = std::make_shared< IntSyntaxNode >( lexical_tokens[3] );
+   const auto& f0 = std::make_shared< FSyntaxNode >( d0 );
+   const auto& d1 = std::make_shared< IntSyntaxNode >( lexical_tokens[6] );
+   const auto& f1 = std::make_shared< FSyntaxNode >( d1 );
+   std::vector< LexicalTokens::LexicalToken > bin_expr_lexical_tokens{ lexical_tokens[4], lexical_tokens[5] };
+   const auto& bin_expr = std::make_shared< BinExprSyntaxNode >( BinExprSyntaxNode::Type::NotEqual, f0, f1, bin_expr_lexical_tokens );
+   std::vector< LexicalTokens::LexicalToken > true_scope_lexical_tokens{ lexical_tokens[8], lexical_tokens[9]  };
+   const auto& true_scope = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {}, true_scope_lexical_tokens );
+   std::vector< LexicalTokens::LexicalToken > if_lexical_tokens{ lexical_tokens[1] };
+   const auto& if_statment = std::make_shared< IfStatmentSyntaxNode >( bin_expr, true_scope, if_lexical_tokens );
+   AbstractSyntaxTree expected_syntax_tree { if_statment };
+
+   EXPECT_EQ( syntax_tree, expected_syntax_tree );
+}
+
+TEST( SYNTAX_TREE_IF, MEMBER_EXPRESSION_NOT_EQUAL_MEMBER_EXPRESSION )
+{
+   // ARRANGE
+   const auto& input = R"""(
+    if(a[1]!=b[2])
+    {
+
+    }
+   )""";
+
+   // ACT
+   const auto& lexical_tokens = LexicalTokens( input );
+   const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
+
+   // ASSERT
+   // const auto& d0 = std::make_shared< IntSyntaxNode >( lexical_tokens[3] );
+   // const auto& f0 = std::make_shared< FSyntaxNode >( d0 );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
+
+   const auto& number0 = std::make_shared< IntSyntaxNode >( lexical_tokens[5] );
+   const auto& f0 = std::make_shared< FSyntaxNode >( number0 );
+   std::vector< LexicalTokens::LexicalToken > member_expression_lexical_tokens0{ lexical_tokens[4], lexical_tokens[6] };
+   const auto& member_expression0 = std::make_shared< MemberExpressionSyntaxNode >( varible0, f0, member_expression_lexical_tokens0 );
+   // const auto& d1 = std::make_shared< IntSyntaxNode >( lexical_tokens[6] );
+   // const auto& f1 = std::make_shared< FSyntaxNode >( d1 );
+   const auto& name1 = std::make_shared< NameSyntaxNode >( lexical_tokens[9] );
+   const auto& varible1 = std::make_shared< VaribleSyntaxNode >( name1, name1->lexical_tokens() );
+
+   const auto& number1 = std::make_shared< IntSyntaxNode >( lexical_tokens[11] );
+   const auto& f1 = std::make_shared< FSyntaxNode >( number1 );
+   std::vector< LexicalTokens::LexicalToken > member_expression_lexical_tokens1{ lexical_tokens[10], lexical_tokens[12] };
+   const auto& member_expression1 = std::make_shared< MemberExpressionSyntaxNode >( varible1, f1, member_expression_lexical_tokens1 );
+   
+   std::vector< LexicalTokens::LexicalToken > bin_expr_lexical_tokens{ lexical_tokens[7], lexical_tokens[8] };
+   const auto& bin_expr = std::make_shared< BinExprSyntaxNode >( BinExprSyntaxNode::Type::NotEqual, member_expression0, member_expression1, bin_expr_lexical_tokens );
+   std::vector< LexicalTokens::LexicalToken > true_scope_lexical_tokens{ lexical_tokens[8], lexical_tokens[9]  };
+   const auto& true_scope = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {}, true_scope_lexical_tokens );
+   std::vector< LexicalTokens::LexicalToken > if_lexical_tokens{ lexical_tokens[1] };
+   const auto& if_statment = std::make_shared< IfStatmentSyntaxNode >( bin_expr, true_scope, if_lexical_tokens );
+   AbstractSyntaxTree expected_syntax_tree { if_statment };
+
+   EXPECT_EQ( syntax_tree, expected_syntax_tree );
+}
+
 TEST( SYNTAX_TREE_IF, F )
 {
    // ARRANGE
@@ -161,10 +236,11 @@ TEST( SYNTAX_TREE_IF, FUNCTION_CALL )
    const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
 
    // ASSERT
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
    const auto& number = std::make_shared< IntSyntaxNode >( lexical_tokens[5] );
    const auto& f = std::make_shared< FSyntaxNode >( number );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{ f } );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{ f } );
    
    std::vector< LexicalTokens::LexicalToken > true_scope_lexical_tokens{ lexical_tokens[8], lexical_tokens[9]  };
    const auto& true_scope = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {}, true_scope_lexical_tokens );
@@ -190,10 +266,11 @@ TEST( SYNTAX_TREE_IF, IF_SEMICOLON )
    const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
 
    // ASSERT
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
    const auto& number = std::make_shared< IntSyntaxNode >( lexical_tokens[5] );
    const auto& f = std::make_shared< FSyntaxNode >( number );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{ f } );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{ f } );
    
    std::vector< LexicalTokens::LexicalToken > true_scope_lexical_tokens{ lexical_tokens[8], lexical_tokens[9]  };
    const auto& true_scope = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {}, true_scope_lexical_tokens );
@@ -221,10 +298,11 @@ TEST( SYNTAX_TREE_IF, IF_WITH_ELSE_SEMICOLON )
    const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
 
    // ASSERT
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
    const auto& number = std::make_shared< IntSyntaxNode >( lexical_tokens[5] );
    const auto& f = std::make_shared< FSyntaxNode >( number );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{ f } );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{ f } );
    
    std::vector< LexicalTokens::LexicalToken > true_scope_lexical_tokens{ lexical_tokens[8], lexical_tokens[9]  };
    const auto& true_scope = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {}, true_scope_lexical_tokens );

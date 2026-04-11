@@ -105,6 +105,11 @@ ISyntaxNodeSP createSyntaxNodeFromToken( const LexicalTokens::LexicalToken& lexi
      syntax_node = std::make_shared< EqualSyntaxNode >( lexical_token );
   };
   break;
+  case Token_Type::NOT:
+  {
+     syntax_node = std::make_shared< NotSyntaxNode >( lexical_token );
+  };
+  break;
   case Token_Type::LESS:
   {
      syntax_node = std::make_shared< LessSyntaxNode >( lexical_token );

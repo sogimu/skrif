@@ -40,6 +40,8 @@ BinExpr::BinExpr()
      UN_EXPR,
      EQUAL_EXPRESSION0,
      EQUAL_EXPRESSION1,
+     NOT,
+     NOT_EQUAL,
      MORE,
      MORE_EQUAL,
      LESS,
@@ -598,16 +600,19 @@ BinExpr::BinExpr()
                                                         });
      } );
 
-  // F|BIN_EXPR|UN_EXPR|NAME|FUNCTION_CALL|MEMBER_EXPRESSION EQUAL EQUAL|LESS EQUAL|MORE EQUAL F|BIN_EXPR|UN_EXPR|NAME|FUNCTION_CALL|MEMBER_EXPRESSION [!PLUS&&!MINUS&&!ASTERIX&&!SLASH] 
+  // F|BIN_EXPR|UN_EXPR|NAME|FUNCTION_CALL|MEMBER_EXPRESSION (EQUAL EQUAL) | (NOT EQUAL) | (LESS EQUAL) | (MORE EQUAL) F|BIN_EXPR|UN_EXPR|NAME|FUNCTION_CALL|MEMBER_EXPRESSION [!PLUS&&!MINUS&&!ASTERIX&&!SLASH] 
   mProductions.emplace_back(
      [ /* this */ ]( const Stack& stack, const ISyntaxNodeSP& lookahead ) -> PlanOrProgress
      {
+        auto & s = stack;
+        (void) s;
         const size_t minimal_size = 4;
         return find_grammar_matching_progress(stack, minimal_size, [&stack, &minimal_size, &lookahead]( size_t n )->PlanOrProgress
                                                         {
                                                         ISyntaxNodeSP a;
                                                         EqualSyntaxNodeSP equal0;
                                                         EqualSyntaxNodeSP equal1;
+                                                        NotSyntaxNodeSP not_node;
                                                         MoreSyntaxNodeSP more;
                                                         LessSyntaxNodeSP less;
                                                         ISyntaxNodeSP b;
@@ -666,6 +671,18 @@ BinExpr::BinExpr()
                                                                 return { State::FINISH, Impact::MOVE };
                                                               }
                                                            }
+                                                           else if( state == State::NOT_EQUAL )
+                                                           {
+                                                              if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< MinusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< AsteriskSyntaxNode >( lookahead ) && 
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                              {
+                                                                b = node;
+                                                                operation_type = BinExprSyntaxNode::Type::NotEqual;
+                                                                return { State::FINISH, Impact::MOVE };
+                                                              }
+                                                           }
                                                            return { state, Impact::NO_MOVE };
                                                         };
                                                         handlers.bin_expr_syntax_node = [ &operation_type, &a, &b, &lookahead ]( const State& state, const BinExprSyntaxNodeSP& node ) -> HandlerReturn
@@ -708,6 +725,18 @@ BinExpr::BinExpr()
                                                               {
                                                                 b = node;
                                                                 operation_type = BinExprSyntaxNode::Type::LessEqual;
+                                                                return { State::FINISH, Impact::MOVE };
+                                                              }
+                                                           }
+                                                           else if( state == State::NOT_EQUAL )
+                                                           {
+                                                              if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< MinusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< AsteriskSyntaxNode >( lookahead ) && 
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                              {
+                                                                b = node;
+                                                                operation_type = BinExprSyntaxNode::Type::NotEqual;
                                                                 return { State::FINISH, Impact::MOVE };
                                                               }
                                                            }
@@ -756,6 +785,18 @@ BinExpr::BinExpr()
                                                                 return { State::FINISH, Impact::MOVE };
                                                               }
                                                            }
+                                                           else if( state == State::NOT_EQUAL )
+                                                           {
+                                                              if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< MinusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< AsteriskSyntaxNode >( lookahead ) && 
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                              {
+                                                                b = node;
+                                                                operation_type = BinExprSyntaxNode::Type::NotEqual;
+                                                                return { State::FINISH, Impact::MOVE };
+                                                              }
+                                                           }
                                                            return { state, Impact::NO_MOVE };
                                                         };
                                                         handlers.name_syntax_node = [ &operation_type, &a, &b, &lookahead ]( const State& state, const NameSyntaxNodeSP& node ) -> HandlerReturn
@@ -770,7 +811,8 @@ BinExpr::BinExpr()
                                                               if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
                                                                                !check_type< MinusSyntaxNode >( lookahead ) && 
                                                                                !check_type< AsteriskSyntaxNode >( lookahead ) && 
-                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) && 
+                                                                               !check_type< OpenSquareBracketSyntaxNode >( lookahead ) )
                                                               {
                                                                b = std::make_shared<VaribleSyntaxNode>( node, node->lexical_tokens() );
                                                                 operation_type = BinExprSyntaxNode::Type::Equal;
@@ -782,7 +824,8 @@ BinExpr::BinExpr()
                                                               if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
                                                                                !check_type< MinusSyntaxNode >( lookahead ) && 
                                                                                !check_type< AsteriskSyntaxNode >( lookahead ) && 
-                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) && 
+                                                                               !check_type< OpenSquareBracketSyntaxNode >( lookahead ) )
                                                               {
                                                                b = std::make_shared<VaribleSyntaxNode>( node, node->lexical_tokens() );
                                                                 operation_type = BinExprSyntaxNode::Type::MoreEqual;
@@ -794,10 +837,26 @@ BinExpr::BinExpr()
                                                               if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
                                                                                !check_type< MinusSyntaxNode >( lookahead ) && 
                                                                                !check_type< AsteriskSyntaxNode >( lookahead ) && 
-                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) && 
+                                                                               !check_type< OpenSquareBracketSyntaxNode >( lookahead ) )
                                                               {
                                                                b = std::make_shared<VaribleSyntaxNode>( node, node->lexical_tokens() );
                                                                 operation_type = BinExprSyntaxNode::Type::LessEqual;
+                                                                return { State::FINISH, Impact::MOVE };
+                                                              }
+                                                           }
+                                                           else if( state == State::NOT_EQUAL )
+                                                           {
+                                                              auto& ss = lookahead;
+                                                              (void) ss;
+                                                              if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< MinusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< AsteriskSyntaxNode >( lookahead ) && 
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) && 
+                                                                               !check_type< OpenSquareBracketSyntaxNode >( lookahead ) )
+                                                              {
+                                                               b = std::make_shared<VaribleSyntaxNode>( node, node->lexical_tokens() );
+                                                                operation_type = BinExprSyntaxNode::Type::NotEqual;
                                                                 return { State::FINISH, Impact::MOVE };
                                                               }
                                                            }
@@ -846,6 +905,18 @@ BinExpr::BinExpr()
                                                                 return { State::FINISH, Impact::MOVE };
                                                               }
                                                            }
+                                                           else if( state == State::NOT_EQUAL )
+                                                           {
+                                                              if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< MinusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< AsteriskSyntaxNode >( lookahead ) && 
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                              {
+                                                                b = node;
+                                                                operation_type = BinExprSyntaxNode::Type::NotEqual;
+                                                                return { State::FINISH, Impact::MOVE };
+                                                              }
+                                                           }
                                                            return { state, Impact::NO_MOVE };
                                                         };
                                                         handlers.member_expression_syntax_node = [ &operation_type, &a, &b, &lookahead ]( const State& state, const MemberExpressionSyntaxNodeSP& node ) -> HandlerReturn
@@ -891,6 +962,18 @@ BinExpr::BinExpr()
                                                                 return { State::FINISH, Impact::MOVE };
                                                               }
                                                            }
+                                                           else if( state == State::NOT_EQUAL )
+                                                           {
+                                                              if( lookahead && !check_type< PlusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< MinusSyntaxNode >( lookahead ) && 
+                                                                               !check_type< AsteriskSyntaxNode >( lookahead ) && 
+                                                                               !check_type< SlashSyntaxNode >( lookahead ) )
+                                                              {
+                                                                b = node;
+                                                                operation_type = BinExprSyntaxNode::Type::NotEqual;
+                                                                return { State::FINISH, Impact::MOVE };
+                                                              }
+                                                           }
                                                            return { state, Impact::NO_MOVE };
                                                         };
                                                         handlers.equal_syntax_node = [ &equal0, &equal1 ]( const State& state, const EqualSyntaxNodeSP& node ) -> HandlerReturn
@@ -905,6 +988,11 @@ BinExpr::BinExpr()
                                                               equal1 = node;
                                                               return { State::EQUAL_EXPRESSION1, Impact::MOVE };
                                                            }
+                                                           else if( state == State::NOT )
+                                                           {
+                                                              equal1 = node;
+                                                              return { State::NOT_EQUAL, Impact::MOVE };
+                                                           }
                                                            else if( state == State::LESS )
                                                            {
                                                               equal1 = node;
@@ -914,6 +1002,15 @@ BinExpr::BinExpr()
                                                            {
                                                               equal1 = node;
                                                               return { State::MORE_EQUAL, Impact::MOVE };
+                                                           }
+                                                           return { state, Impact::NO_MOVE };
+                                                        };
+                                                        handlers.not_syntax_node = [ &not_node ]( const State& state, const NotSyntaxNodeSP& node ) -> HandlerReturn
+                                                        {
+                                                           if( state == State::F )
+                                                           {
+                                                              not_node = node;
+                                                              return { State::NOT, Impact::MOVE };
                                                            }
                                                            return { state, Impact::NO_MOVE };
                                                         };
@@ -954,6 +1051,13 @@ BinExpr::BinExpr()
                                                               nodes.push_back( equal0 );
                                                               nodes.push_back( equal1 );
                                                               first_operation_node = equal0;
+                                                              second_operation_node = equal1;
+                                                            }
+                                                            else if( operation_type == BinExprSyntaxNode::Type::NotEqual )
+                                                            {
+                                                              nodes.push_back( not_node );
+                                                              nodes.push_back( equal1 );
+                                                              first_operation_node = not_node;
                                                               second_operation_node = equal1;
                                                             }
                                                             else if( operation_type == BinExprSyntaxNode::Type::LessEqual )

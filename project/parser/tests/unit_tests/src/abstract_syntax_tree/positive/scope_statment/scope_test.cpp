@@ -150,9 +150,10 @@ TEST( SYNTAX_TREE_SCOPE, FUNCTION_DECLARATION_FUNCTION_CALL )
                                                                                    scope0, function_statment_lexical_tokens );
 
    const auto& name2 = std::make_shared< NameSyntaxNode >( lexical_tokens[9] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name2, name2->lexical_tokens() );
    const auto& number = std::make_shared< IntSyntaxNode >( lexical_tokens[11] );
    const auto& f = std::make_shared< FSyntaxNode >( number );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name2, std::vector< ISyntaxNodeSP >{ f } );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{ f } );
    
    std::vector< LexicalTokens::LexicalToken > scope1_lexical_tokens{ lexical_tokens[1], lexical_tokens[14]  };
    const auto& scope1 = std::make_shared< ScopeSyntaxNode >( std::vector< ISyntaxNodeSP > {function_statment, function_call}, scope1_lexical_tokens );

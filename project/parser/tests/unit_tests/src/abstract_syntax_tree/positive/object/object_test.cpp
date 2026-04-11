@@ -92,8 +92,9 @@ TEST( SYNTAX_TREE_OBJECT, FROM_FUNCTION_CALL )
 
    // ASSERT
    const auto& string0 = std::make_shared< StringSyntaxNode >( lexical_tokens[2] );
-   const auto& name = std::make_shared< NameSyntaxNode >( lexical_tokens[4] );
-   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, std::vector< ISyntaxNodeSP >{} );
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[4] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
+   const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( varible0, std::vector< ISyntaxNodeSP >{} );
    std::vector< LexicalTokens::LexicalToken > pair0_lexical_tokens
    {
       lexical_tokens[3]

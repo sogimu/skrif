@@ -1,7 +1,10 @@
 #include "grammars/function_call_grammar.h"
 #include "nonterminals/array_syntax_node.h"
+#include "nonterminals/function_statment_syntax_node.h"
+#include "nonterminals/member_expression_syntax_node.h"
 #include "nonterminals/statment_syntax_node.h"
 #include "nonterminals/function_call_syntax_node.h"
+#include "nonterminals/varible_assigment_statment_syntax_node.h"
 #include "nonterminals/varible_syntax_node.h"
 #include "terminals/asterisk_syntax_node.h"
 #include "terminals/close_circle_bracket_syntax_node.h"
@@ -21,6 +24,7 @@ FunctionCall::FunctionCall()
       FINISH,
       ERROR,
       NAME,
+      MEMBER_EXPRESSION,
       ARGUMENT,
       OPEN_CIRCLE_BRACKET,
       CLOSE_CIRCLE_BRACKET,
@@ -29,10 +33,12 @@ FunctionCall::FunctionCall()
       SEMICOLON,
    };
 
-   // NAME OPEN_CIRCLE_BRACKET (NAME|F|BIN_EXPR|UN_EXPR|FUNCTION_CALL COMMA?)+ CLOSE_CIRCLE_BRACKET
+   // NAME|MEMBER_EXPRESSION OPEN_CIRCLE_BRACKET (NAME|F|BIN_EXPR|UN_EXPR|FUNCTION_CALL COMMA?)+ CLOSE_CIRCLE_BRACKET
    mProductions.emplace_back(
       []( const Stack& stack, const ISyntaxNodeSP& lookahead ) -> PlanOrProgress
       {
+         auto &s = stack;
+         (void) s;
          bool is_open_circle_bracket_found = false;
          bool is_close_circle_bracket_found = false;
          size_t distance_between_open_close_circle_bracket = 0;
@@ -56,12 +62,12 @@ FunctionCall::FunctionCall()
              return Progress{ .readiness = 0.0 };
          
          SyntaxNodeEmptyVisitor::Handlers close_circle_bracket_handler;
-         for( ; it != stack.rend(); ++it )
+         for( auto it1 = stack.rbegin(); it1 != it; ++it1 )
          {
             close_circle_bracket_handler.close_circle_bracket_syntax_node = [ &is_close_circle_bracket_found ]( const CloseCircleBracketSyntaxNodeSP& /* node */ )
             { is_close_circle_bracket_found = true; };
             const auto& close_circle_bracket_visitor = std::make_shared< SyntaxNodeEmptyVisitor >( close_circle_bracket_handler );
-            ( *it )->accept( close_circle_bracket_visitor );
+            ( *it1 )->accept( close_circle_bracket_visitor );
             if( is_close_circle_bracket_found )
             {
                break;
@@ -74,7 +80,7 @@ FunctionCall::FunctionCall()
              minimal_steps_number = minimal_size + 1;
          return find_grammar_matching_progress(stack, minimal_size, [&stack, &lookahead, &minimal_steps_number]( size_t n ) -> PlanOrProgress
          {
-             NameSyntaxNodeSP name;
+             std::variant< VaribleSyntaxNodeSP, MemberExpressionSyntaxNodeSP > function_as_name_or_member_expression;
              OpenCircleBracketSyntaxNodeSP open_circle_bracket;
              std::vector< ISyntaxNodeSP > arguments;
              std::vector< ISyntaxNodeSP > commas;
@@ -90,11 +96,12 @@ FunctionCall::FunctionCall()
              { 
                 return { State::ERROR, Impact::ERROR };
              };
-             handlers.name_syntax_node = [ &name, &arguments ]( const State& state, const NameSyntaxNodeSP& node ) -> HandlerReturn
+             handlers.name_syntax_node = [ &function_as_name_or_member_expression, &arguments ]( const State& state, const NameSyntaxNodeSP& node ) -> HandlerReturn
              {
                 if( state == State::START )
                 {
-                    name = node;
+                    // function_as_name_or_member_expression = node;
+                    function_as_name_or_member_expression = std::make_shared< VaribleSyntaxNode >( node, node->lexical_tokens() );
                     return { State::NAME, Impact::MOVE };
                 }
                 else if( state == State::OPEN_CIRCLE_BRACKET || state == State::COMMA )
@@ -131,6 +138,24 @@ FunctionCall::FunctionCall()
                 }
                 return { state, Impact::ERROR };
              };
+             handlers.varible_assigment_statment_syntax_node = [ &arguments ]( const State& state, const VaribleAssigmentStatmentSyntaxNodeSP& node ) -> HandlerReturn
+             {
+                if( state == State::OPEN_CIRCLE_BRACKET || state == State::COMMA )
+                {
+                    arguments.emplace_back( node );
+                    return { State::ARGUMENT, Impact::MOVE };
+                }
+                return { state, Impact::ERROR };
+             };
+             handlers.function_statment_syntax_node = [ &arguments ]( const State& state, const FunctionStatmentSyntaxNodeSP& node ) -> HandlerReturn
+             {
+                if( state == State::OPEN_CIRCLE_BRACKET || state == State::COMMA )
+                {
+                    arguments.emplace_back( node );
+                    return { State::ARGUMENT, Impact::MOVE };
+                }
+                return { state, Impact::ERROR };
+             };
              handlers.function_call_syntax_node = [ &arguments ]( const State& state, const FunctionCallSyntaxNodeSP& node ) -> HandlerReturn
              {
                 if( state == State::OPEN_CIRCLE_BRACKET || state == State::COMMA )
@@ -158,9 +183,14 @@ FunctionCall::FunctionCall()
                 }
                 return { state, Impact::ERROR };
              };
-             handlers.member_expression_syntax_node = [ &arguments ]( const State& state, const MemberExpressionSyntaxNodeSP& node ) -> HandlerReturn
+             handlers.member_expression_syntax_node = [ &arguments, &function_as_name_or_member_expression ]( const State& state, const MemberExpressionSyntaxNodeSP& node ) -> HandlerReturn
              {
-                if( state == State::OPEN_CIRCLE_BRACKET || state == State::COMMA )
+                if( state == State::START )
+                {
+                    function_as_name_or_member_expression = node;
+                    return { State::MEMBER_EXPRESSION, Impact::MOVE };
+                }
+                else if( state == State::OPEN_CIRCLE_BRACKET || state == State::COMMA )
                 {
                    arguments.push_back( node );
                    return { State::ARGUMENT, Impact::MOVE };
@@ -178,7 +208,7 @@ FunctionCall::FunctionCall()
              };
              handlers.open_circle_bracket_syntax_node = [ &open_circle_bracket ]( const State& state, const OpenCircleBracketSyntaxNodeSP& node ) -> HandlerReturn
              {
-                if( state == State::NAME )
+                if( state == State::NAME || state == State::MEMBER_EXPRESSION )
                 {
                     open_circle_bracket = node;
                     return { State::OPEN_CIRCLE_BRACKET, Impact::MOVE };
@@ -215,7 +245,14 @@ FunctionCall::FunctionCall()
              else if( iteration_result.state == State::FINISH )
              {
                  Plan plan;
-                 plan.to_remove.nodes.push_back( name );
+                 std::visit([&plan](auto&& arg)
+                 {
+                     using T = std::decay_t<decltype(arg)>;
+                     if constexpr (std::is_same_v<T, VaribleSyntaxNodeSP>)
+                         plan.to_remove.nodes.push_back( arg );
+                     else if constexpr (std::is_same_v<T, MemberExpressionSyntaxNodeSP>)
+                         plan.to_remove.nodes.push_back( arg );
+                 }, function_as_name_or_member_expression );
                  plan.to_remove.nodes.push_back( open_circle_bracket );
                  for( const auto& argument : arguments )
                     plan.to_remove.nodes.push_back( argument );
@@ -223,8 +260,20 @@ FunctionCall::FunctionCall()
                     plan.to_remove.nodes.push_back( comma );
                  plan.to_remove.nodes.push_back( close_circle_bracket );
 
-                 const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( name, arguments );
-                 plan.to_add.nodes.push_back( function_call );
+                 std::visit([&plan, &arguments](auto&& arg)
+                 {
+                     using T = std::decay_t<decltype(arg)>;
+                     if constexpr (std::is_same_v<T, VaribleSyntaxNodeSP>)
+                     {
+                         const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( arg, arguments );
+                         plan.to_add.nodes.push_back( function_call );
+                     }
+                     else if constexpr (std::is_same_v<T, MemberExpressionSyntaxNodeSP>)
+                     {
+                         const auto& function_call = std::make_shared< FunctionCallSyntaxNode >( arg, arguments );
+                         plan.to_add.nodes.push_back( function_call );
+                     }
+                 }, function_as_name_or_member_expression );
                  plan_or_progress = plan;
              }
              else {

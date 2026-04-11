@@ -189,6 +189,11 @@ public:
       mCopy = std::make_shared< EqualSyntaxNode >( *node );
    }
 
+   void visit( const NotSyntaxNodeSP& node ) override
+   {
+      mCopy = std::make_shared< NotSyntaxNode >( *node );
+   }
+
    void visit( const LessSyntaxNodeSP& node ) override
    {
       mCopy = std::make_shared< LessSyntaxNode >( *node );

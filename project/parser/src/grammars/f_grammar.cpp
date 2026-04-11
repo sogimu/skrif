@@ -31,7 +31,7 @@ F::F()
       CLOSE_CIRCLE_BRACKET
    };
 
-   // DOUBLE|INT|STRING [PLUS,MINUS,MULTIPLY,DIVISION,SEMICOLON,CLOSE_CIRCLE_BRACKET,COMMA,EQUAL,LESS,MORE]
+   // DOUBLE|INT|STRING [PLUS,MINUS,MULTIPLY,DIVISION,SEMICOLON,CLOSE_CIRCLE_BRACKET,COMMA,EQUAL,LESS,MORE,NOT]
    mProductions.emplace_back(
       []( const Stack& stack, const ISyntaxNodeSP& lookahead ) -> PlanOrProgress
       {
@@ -62,7 +62,8 @@ F::F()
                      check_type<CommaSyntaxNode>( lookahead ) ||
                      check_type<EqualSyntaxNode>( lookahead ) ||
                      check_type<LessSyntaxNode>( lookahead ) ||
-                     check_type<MoreSyntaxNode>( lookahead ) ) )
+                     check_type<MoreSyntaxNode>( lookahead ) ||
+                     check_type<NotSyntaxNode>( lookahead ) ) )
                 {
                   number = node;
                   f_node = std::make_shared< FSyntaxNode >( node );
@@ -90,7 +91,8 @@ F::F()
                      check_type<CommaSyntaxNode>( lookahead ) ||
                      check_type<EqualSyntaxNode>( lookahead ) ||
                      check_type<LessSyntaxNode>( lookahead ) ||
-                     check_type<MoreSyntaxNode>( lookahead ) ) )
+                     check_type<MoreSyntaxNode>( lookahead ) ||
+                     check_type<NotSyntaxNode>( lookahead ) ) )
                 {
                   number = node;
                   f_node = std::make_shared< FSyntaxNode >( node );
@@ -102,6 +104,10 @@ F::F()
           handlers.string_syntax_node =
              [ &f_node, &number, &state, &lookahead, &progress_counter ]( const StringSyntaxNodeSP& node )
           {
+             auto& s = state;
+             (void) s;
+             auto& l = lookahead;
+             (void) l;
              if( state == State::START )
              {
                 state = State::INT;
