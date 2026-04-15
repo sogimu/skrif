@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(naive_stack_interpreter_unit_tests VERSION 0.0.1 LANGUAGES CXX)
+project(tree_walking_interpreter_unit_tests VERSION 0.0.1 LANGUAGES CXX)
 
 # Enable AddressSanitizer
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -19,9 +19,9 @@ add_executable(${PROJECT_NAME}
     src/variable_store/variable_store_test.cpp
     src/main.cpp
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC naive_stack_interpreter GTest::gtest_main)
+target_link_libraries(${PROJECT_NAME} PUBLIC tree_walking_interpreter GTest::gtest_main)
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 # Регистрация тестов для CTest
-add_test(NAME naive_stack_interpreter_unit_tests COMMAND ${PROJECT_NAME})
+add_test(NAME tree_walking_interpreter_unit_tests COMMAND ${PROJECT_NAME})

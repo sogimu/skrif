@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(naive_stack_interpreter VERSION 0.0.1 LANGUAGES CXX)
+project(tree_walking_interpreter VERSION 0.0.1 LANGUAGES CXX)
 
 set(HEADERS
     include/varible_store.h
