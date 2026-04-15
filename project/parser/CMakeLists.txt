@@ -31,6 +31,7 @@ set(HEADERS
     include/syntax_nodes/terminals/f_syntax_node.h
     include/syntax_nodes/terminals/semicolon_syntax_node.h
     include/syntax_nodes/terminals/colon_syntax_node.h
+    include/syntax_nodes/terminals/dot_syntax_node.h
     include/syntax_nodes/terminals/return_syntax_node.h
     include/syntax_nodes/terminals/print_syntax_node.h
     include/syntax_nodes/terminals/equal_syntax_node.h
@@ -98,6 +99,7 @@ set(SOURCES
     src/syntax_nodes/terminals/f_syntax_node.cpp
     src/syntax_nodes/terminals/semicolon_syntax_node.cpp
     src/syntax_nodes/terminals/colon_syntax_node.cpp
+    src/syntax_nodes/terminals/dot_syntax_node.cpp
     src/syntax_nodes/terminals/var_syntax_node.cpp
     src/syntax_nodes/terminals/return_syntax_node.cpp
     src/syntax_nodes/terminals/comma_syntax_node.cpp

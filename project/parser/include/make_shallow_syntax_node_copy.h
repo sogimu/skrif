@@ -89,6 +89,11 @@ public:
       mCopy = std::make_shared< ColonSyntaxNode >( *node );
    }
 
+   void visit( const DotSyntaxNodeSP& node ) override
+   {
+      mCopy = std::make_shared< DotSyntaxNode >( *node );
+   }
+
    void visit( const StatmentSyntaxNodeSP& node ) override
    {
       mCopy = std::make_shared< StatmentSyntaxNode >( *node );
