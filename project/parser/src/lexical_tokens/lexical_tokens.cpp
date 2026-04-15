@@ -170,6 +170,11 @@ LexicalTokens::LexicalTokens( const std::string& text )
            terminal_token_type = Token_Type::COMMA;
         };
         break;
+        case '.':
+        {
+           terminal_token_type = Token_Type::DOT;
+        };
+        break;
 
         default:
         {

@@ -28,6 +28,7 @@ public:
       std::function< void( const EolSyntaxNodeSP& ) > eol_syntax_node = [ this ]( const EolSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const SemicolonSyntaxNodeSP& ) > semicolon_syntax_node = [ this ]( const SemicolonSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const ColonSyntaxNodeSP& ) > colon_syntax_node = [ this ]( const ColonSyntaxNodeSP& node ) { default_handler( node ); };
+      std::function< void( const DotSyntaxNodeSP& ) > dot_syntax_node = [ this ]( const DotSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const VarSyntaxNodeSP& ) > var_syntax_node = [ this ]( const VarSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const StatmentSyntaxNodeSP& ) > statment_syntax_node = [ this ]( const StatmentSyntaxNodeSP& node ) { default_handler( node ); };
       std::function< void( const ScopeSyntaxNodeSP& ) > scope_statment_syntax_node = [ this ]( const ScopeSyntaxNodeSP& node ) { default_handler( node ); };
@@ -157,6 +158,11 @@ public:
    void visit( const ColonSyntaxNodeSP& node ) override
    {
       mHandlers.colon_syntax_node( node );
+   }
+
+   void visit( const DotSyntaxNodeSP& node ) override
+   {
+      mHandlers.dot_syntax_node( node );
    }
 
    void visit( const StatmentSyntaxNodeSP& node ) override

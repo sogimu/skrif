@@ -645,6 +645,12 @@ public:
          mResult = true;
    }
 
+   void visit( const DotSyntaxNodeSP& /* node */ ) override
+   {
+      if constexpr( std::is_same_v< T, DotSyntaxNode > )
+         mResult = true;
+   }
+
    void visit( const StatmentSyntaxNodeSP& /* node */ ) override
    {
       if constexpr( std::is_same_v< T, StatmentSyntaxNode > )
