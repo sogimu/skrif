@@ -146,7 +146,7 @@ ctest --verbose
 - [x] **Function call** Standart notation
 - [ ] **Function call** Member notation
 - [x] **Member expresson** Bracket notation
-- [ ] **Member expresson** dot notation
+- [x] **Member expresson** dot notation
 - [ ] **Standart library** Console object
 - [ ] **Standard library** Math
 - [x] **Function closure**

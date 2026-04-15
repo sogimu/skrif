@@ -29,6 +29,7 @@
 #include "terminals/print_syntax_node.h"
 #include "terminals/semicolon_syntax_node.h"
 #include "terminals/colon_syntax_node.h"
+#include "terminals/dot_syntax_node.h"
 #include "terminals/var_syntax_node.h"
 #include "terminals/slash_syntax_node.h"
 #include "terminals/return_syntax_node.h"
@@ -71,6 +72,7 @@ public:
    virtual void visit( const MemberExpressionSyntaxNodeSP& ) = 0;
    virtual void visit( const SemicolonSyntaxNodeSP& ) = 0;
    virtual void visit( const ColonSyntaxNodeSP& ) = 0;
+   virtual void visit( const DotSyntaxNodeSP& ) = 0;
    virtual void visit( const VarSyntaxNodeSP& ) = 0;
    virtual void visit( const StatmentSyntaxNodeSP& ) = 0;
    virtual void visit( const ScopeSyntaxNodeSP& ) = 0;

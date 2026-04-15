@@ -50,6 +50,7 @@
 #include "syntax_nodes/nonterminals/bin_expr_syntax_node.h"
 #include "syntax_nodes/terminals/plus_syntax_node.h"
 #include "syntax_nodes/terminals/semicolon_syntax_node.h"
+#include "syntax_nodes/terminals/dot_syntax_node.h"
 #include "syntax_nodes/terminals/var_syntax_node.h"
 #include "syntax_nodes/terminals/string_syntax_node.h"
 
@@ -208,6 +209,11 @@ ISyntaxNodeSP createSyntaxNodeFromToken( const LexicalTokens::LexicalToken& lexi
   case Token_Type::STRING:
   {
      syntax_node = std::make_shared< StringSyntaxNode >( lexical_token );
+  };
+  break;
+  case Token_Type::DOT:
+  {
+     syntax_node = std::make_shared< DotSyntaxNode >( lexical_token );
   };
   break;
   default:
