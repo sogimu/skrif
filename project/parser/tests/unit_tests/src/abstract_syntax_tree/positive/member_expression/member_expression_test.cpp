@@ -3,6 +3,7 @@
 #include "lexical_tokens.h"
 #include "nonterminals/un_expr_syntax_node.h"
 #include "nonterminals/varible_assigment_statment_syntax_node.h"
+#include "terminals/dot_syntax_node.h"
 #include <gtest/gtest.h>
 #include "utils/utils.h"
 #include <vector>
@@ -140,6 +141,61 @@ TEST( SYNTAX_TREE_MEMBER_EXPRESSION, INDEX_BY_VARIBLE )
    const auto& member_expression = std::make_shared< MemberExpressionSyntaxNode >( varible0, varible1, member_expression_lexical_tokens );
   
    AbstractSyntaxTree expected_syntax_tree { member_expression };
+   EXPECT_EQ( syntax_tree, expected_syntax_tree );
+}
+
+TEST( SYNTAX_TREE_MEMBER_EXPRESSION, DOT_ACCESS )
+{
+   // ARRANGE
+   const auto& input = R"""(
+      b.key;
+   )""";
+
+   // ACT
+   const auto& lexical_tokens = LexicalTokens( input );
+   const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
+
+   // ASSERT
+   // lexical_tokens[0] = BOL, [1] = NAME "b", [2] = DOT ".", [3] = NAME "key", [4] = SEMICOLON, [5] = EOL
+   const auto& name0 = std::make_shared< NameSyntaxNode >( lexical_tokens[1] );
+   const auto& varible0 = std::make_shared< VaribleSyntaxNode >( name0, name0->lexical_tokens() );
+
+   const auto& property_name = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+
+   std::vector< LexicalTokens::LexicalToken > member_expression_lexical_tokens{ lexical_tokens[1], lexical_tokens[2] };
+   const auto& member_expression = std::make_shared< MemberExpressionSyntaxNode >( varible0, property_name, member_expression_lexical_tokens );
+
+   AbstractSyntaxTree expected_syntax_tree { member_expression };
+   EXPECT_EQ( syntax_tree, expected_syntax_tree );
+}
+
+TEST( SYNTAX_TREE_MEMBER_EXPRESSION, DOT_ACCESS_CHAINED )
+{
+   // ARRANGE
+   const auto& input = R"""(
+      a.b.c;
+   )""";
+
+   // ACT
+   const auto& lexical_tokens = LexicalTokens( input );
+   const auto& syntax_tree = AbstractSyntaxTree( lexical_tokens );
+
+   // ASSERT
+   // [0]=BOL [1]=NAME"a" [2]=DOT [3]=NAME"b" [4]=DOT [5]=NAME"c" [6]=SEMICOLON [7]=EOL
+   const auto& name_a = std::make_shared< NameSyntaxNode >( lexical_tokens[1] );
+   const auto& varible_a = std::make_shared< VaribleSyntaxNode >( name_a, name_a->lexical_tokens() );
+
+   const auto& name_b = std::make_shared< NameSyntaxNode >( lexical_tokens[3] );
+
+   std::vector< LexicalTokens::LexicalToken > inner_tokens{ lexical_tokens[1], lexical_tokens[2] };
+   const auto& inner_member = std::make_shared< MemberExpressionSyntaxNode >( varible_a, name_b, inner_tokens );
+
+   const auto& name_c = std::make_shared< NameSyntaxNode >( lexical_tokens[5] );
+
+   std::vector< LexicalTokens::LexicalToken > outer_tokens{ lexical_tokens[1], lexical_tokens[4] };
+   const auto& outer_member = std::make_shared< MemberExpressionSyntaxNode >( inner_member, name_c, outer_tokens );
+
+   AbstractSyntaxTree expected_syntax_tree { outer_member };
    EXPECT_EQ( syntax_tree, expected_syntax_tree );
 }
 
