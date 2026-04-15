@@ -159,7 +159,8 @@ MemberExpression::MemberExpression()
                                     check_type<LessSyntaxNode>( lookahead ) ||
                                     check_type<MoreSyntaxNode>( lookahead ) ||
                                     check_type<NotSyntaxNode>( lookahead ) ||
-                                    check_type<CommaSyntaxNode>( lookahead ) ) )
+                                    check_type<CommaSyntaxNode>( lookahead ) ||
+                                    check_type<DotSyntaxNode>( lookahead ) ) )
                  {
                      close_square_bracket = node;
                      return { State::FINISH, Impact::MOVE };

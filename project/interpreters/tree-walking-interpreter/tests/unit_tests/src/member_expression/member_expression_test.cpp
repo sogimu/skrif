@@ -186,3 +186,59 @@ TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, EXPRESSION_INDEX_ACCESS )
     EXPECT_EQ( result.is_int(), true );
     EXPECT_EQ( result.get_int(), 300 );
 }
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, DOT_OBJECT_READ_PROPERTY )
+{
+    // ARRANGE
+    const auto& input = R"""({ var obj = {"name": "Alice", "age": 30}; return obj.name; })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_string(), true );
+    EXPECT_EQ( result.get_string(), "Alice" );
+}
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, DOT_OBJECT_WRITE_PROPERTY )
+{
+    // ARRANGE
+    const auto& input = R"""({ var obj = {"name": "Alice", "age": 30}; obj.age = 25; return obj.age; })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_int(), true );
+    EXPECT_EQ( result.get_int(), 25 );
+}
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, DOT_OBJECT_ADD_PROPERTY )
+{
+    // ARRANGE
+    const auto& input = R"""({ var obj = {"name": "Alice"}; obj.city = "Moscow"; return obj.city; })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_string(), true );
+    EXPECT_EQ( result.get_string(), "Moscow" );
+}
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, DOT_CHAINED_ACCESS )
+{
+    // ARRANGE
+    const auto& input = R"""({ var nested = {"user": {"name": "Bob"}}; return nested["user"].name; })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_string(), true );
+    EXPECT_EQ( result.get_string(), "Bob" );
+}
