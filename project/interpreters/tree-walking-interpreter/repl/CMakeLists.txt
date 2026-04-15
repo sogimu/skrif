@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(naive_stack_interpreter_repl VERSION 0.0.1 LANGUAGES CXX)
+project(tree_walking_interpreter_repl VERSION 0.0.1 LANGUAGES CXX)
 
 # Enable AddressSanitizer
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -31,6 +31,6 @@ endif()
 message(STATUS "Found readline include dir: ${READLINE_INCLUDE_DIR}")
 message(STATUS "Found readline library: ${READLINE_LIBRARY}")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE naive_stack_interpreter ${READLINE_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE tree_walking_interpreter ${READLINE_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
