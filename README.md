@@ -1,8 +1,8 @@
-# Shift-Reduce Parser & JavaScript Interpreter
+# Skrif
 
-> Parser and interpreter for JavaScript-like language built on Shift-Reduce algorithm
+> A JavaScript-like interpreter built on a Shift-Reduce (LR) parser, written in C++
 
-[![Workflow Status](https://github.com/sogimu/shift-reduce-parser/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/sogimu/shift-reduce-parser/actions/workflows/cmake-single-platform.yml)
+[![Workflow Status](https://github.com/sogimu/skrif/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/sogimu/skrif/actions/workflows/cmake-single-platform.yml)
 
 ## Overview
 
@@ -40,8 +40,8 @@ brew install cmake readline
 ### Build
 
 ```bash
-git clone https://github.com/sogimu/shift-reduce-parser.git
-cd shift-reduce-parser
+git clone https://github.com/sogimu/skrif.git
+cd skrif
 mkdir build && cd build
 cmake ..
 make -j$(nproc)
@@ -50,7 +50,7 @@ make -j$(nproc)
 ### Run REPL
 
 ```bash
-./project/interpreters/naive_stack_interpreter/repl/repl
+./project/interpreters/tree-walking-interpreter/repl/repl
 ```
 
 ## Examples
@@ -107,7 +107,7 @@ x is large
 project/
 ├── parser/           # LR parser and AST
 ├── interpreters/     # Execution engines
-│   └── naive_stack_interpreter/
+│   └── tree-walking-interpreter/
 └── libs/            # External libraries (GoogleTest)
 ```
 
@@ -115,8 +115,8 @@ project/
 
 - [`LexicalTokens`](project/parser/include/lexical_tokens/lexical_tokens.h) — lexical analyzer
 - [`AbstractSyntaxTree`](project/parser/include/abstract_syntax_tree/abstract_syntax_tree.h) — AST construction
-- [`StackMachine`](project/interpreters/naive_stack_interpreter/include/stack_machine.h) — stack-based interpreter
-- [`Interpreter`](project/interpreters/naive_stack_interpreter/include/interpreter.h) — high-level interface
+- [`StackMachine`](project/interpreters/tree-walking-interpreter/include/stack_machine.h) — stack-based interpreter
+- [`Interpreter`](project/interpreters/tree-walking-interpreter/include/interpreter.h) — high-level interface
 
 ## Testing
 
@@ -132,7 +132,7 @@ ctest --verbose
 ./project/parser/tests/unit_tests/parser_tests
 
 # Interpreter tests  
-./project/interpreters/naive_stack_interpreter/tests/unit_tests/interpreter_tests
+./project/interpreters/tree-walking-interpreter/tests/unit_tests/interpreter_tests
 ```
 
 ## Roadmap
