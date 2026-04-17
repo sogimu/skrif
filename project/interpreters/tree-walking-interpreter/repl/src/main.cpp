@@ -5,20 +5,25 @@
 #include <sstream>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include <readline/readline.h>
 #include <readline/history.h>
 
-// Separator used in history file to encode embedded newlines.
-static const char HIST_NL = '\x1E';
-
-// Pending multiline entry recalled from history (waiting for Enter).
-static std::string g_pending_entry;
 #include <cstdlib>   // getenv
 #include <sys/stat.h> // mkdir
 #include <cstring>   // strerror
 #include <cerrno>    // errno
 #include <unistd.h>  // access
+
+// Separator used in history file to encode embedded newlines.
+static const char HIST_NL = '\x1E';
+
+// Multiline history navigation state.
+// When g_ml_index >= 0, the user is navigating within a recalled multiline entry.
+// g_ml_lines holds all lines; g_ml_index is the line currently in the readline buffer.
+static std::vector<std::string> g_ml_lines;
+static int g_ml_index = -1;
 
 bool ensureDirExists( const std::string& path )
 {
@@ -133,22 +138,77 @@ static void execute_code( const std::string& code )
     }
 }
 
-// Print a multiline entry with >>> / ... prompts, replacing the current readline line.
-static void print_entry_preview( const std::string& text )
+// Erase the full multiline display: g_ml_index static lines above + the readline line
+// + any below-lines printed via DECSC/DECRC.  Leaves cursor at column 0, ready for
+// rl_on_new_line() / rl_redisplay() to start fresh.
+static void ml_clear_display()
 {
-    fprintf( rl_outstream, "\r\033[K" );  // erase the current >>> prompt
-    std::istringstream ss( text );
-    std::string line;
-    bool first = true;
-    while( std::getline(ss, line) )
+    fprintf( rl_outstream, "\r" );
+    for( int i = 0; i < g_ml_index; i++ )
+        fprintf( rl_outstream, "\033[A" );
+    fprintf( rl_outstream, "\033[J" );
+    rl_on_new_line();
+}
+
+// Render the multiline entry with line idx in the editable readline buffer.
+// Lines 0..idx-1 are printed as static text above; lines idx+1..n-1 are printed
+// below and cursor is moved back up so readline owns the correct terminal row.
+static void ml_show_line( int idx )
+{
+    // Erase the terminal line where readline currently sits.  Needed when entering
+    // ML mode fresh (the old ">>> " prompt is still there); harmless after
+    // ml_clear_display (the line is already blank).
+    fprintf( rl_outstream, "\r\033[K" );
+
+    for( int i = 0; i < idx; i++ )
+        fprintf( rl_outstream, "%s%s\n", i == 0 ? ">>> " : "... ", g_ml_lines[i].c_str() );
+
+    // Cursor is now at column 0 of the line where readline will draw.
+    g_ml_index = idx;
+    rl_on_new_line();
+    rl_set_prompt( idx == 0 ? ">>> " : "... " );
+    rl_replace_line( g_ml_lines[idx].c_str(), 1 );
+    rl_point = rl_end;
+    rl_redisplay();
+
+    int below = (int)g_ml_lines.size() - 1 - idx;
+    if( below > 0 )
     {
-        fprintf( rl_outstream, first ? ">>> %s\n" : "... %s\n", line.c_str() );
-        first = false;
+        for( int i = idx + 1; i < (int)g_ml_lines.size(); i++ )
+            fprintf( rl_outstream, "\n... %s", g_ml_lines[i].c_str() );
+        // Move cursor back up to the readline row and to the rl_end column.
+        // Using \033[A instead of DECSC/DECRC so scrolling doesn't break position.
+        for( int i = 0; i < below; i++ )
+            fprintf( rl_outstream, "\033[A" );
+        int col = 4 + (int)g_ml_lines[idx].size();  // prompt (4) + content length
+        fprintf( rl_outstream, "\r\033[%dC", col );
+        fflush( rl_outstream );
     }
 }
 
 static int navigate_history( int dir )
 {
+    if( g_ml_index >= 0 )
+    {
+        // Save any edits the user made to the active line.
+        g_ml_lines[g_ml_index] = rl_line_buffer;
+
+        int new_idx = g_ml_index + dir;
+        if( new_idx >= 0 && new_idx < (int)g_ml_lines.size() )
+        {
+            // Move cursor between lines within the same entry.
+            ml_clear_display();
+            ml_show_line( new_idx );
+            return 0;
+        }
+
+        // Reached the top or bottom boundary: exit ML mode and fall through to
+        // navigate to the adjacent history entry.
+        ml_clear_display();
+        g_ml_index = -1;
+        g_ml_lines.clear();
+    }
+
     HIST_ENTRY* entry = ( dir < 0 ) ? previous_history() : next_history();
     if( !entry ) { rl_ding(); return 0; }
 
@@ -156,22 +216,24 @@ static int navigate_history( int dir )
 
     if( text.find('\n') != std::string::npos )
     {
-        // Multiline entry: erase the current prompt line, print the full snippet
-        // with >>> / ... prefixes, then leave readline with an empty buffer.
-        // Pressing Enter on the empty prompt executes the pending entry.
-        print_entry_preview( text );
-        rl_on_new_line();
-        g_pending_entry = text;
-        rl_replace_line( "", 1 );
+        std::istringstream ss( text );
+        std::string ln;
+        g_ml_lines.clear();
+        while( std::getline(ss, ln) ) g_ml_lines.push_back(ln);
+
+        // Up → cursor at top line; Down → cursor at bottom line.
+        int show_idx = ( dir < 0 ) ? 0 : (int)g_ml_lines.size() - 1;
+        ml_show_line( show_idx );
     }
     else
     {
-        g_pending_entry.clear();
+        g_ml_index = -1;
+        g_ml_lines.clear();
         rl_replace_line( text.c_str(), 1 );
+        rl_set_prompt( ">>> " );
+        rl_point = rl_end;
+        rl_redisplay();
     }
-
-    rl_point = rl_end;
-    rl_redisplay();
     return 0;
 }
 
@@ -251,7 +313,7 @@ int main( int argc, char* argv[] )
         return 1;
     }
 
-    std::string config_dir = std::string(home) + "/.config/naive_stack_machine_repl";
+    std::string config_dir = std::string(home) + "/.config/tree_waling_interpreter_repl";
     std::string history_file = config_dir + "/history";
 
     if( !ensureDirExists(config_dir) ) return 1;
@@ -280,16 +342,28 @@ int main( int argc, char* argv[] )
         std::string line( line_cstr );
         free( line_cstr );
 
-        // Empty Enter after a multiline history preview executes the pending entry.
-        if( !g_pending_entry.empty() && line.empty() )
+        if( g_ml_index >= 0 )
         {
-            std::string entry = g_pending_entry;
-            g_pending_entry.clear();
+            // Enter pressed while navigating a multiline history entry.
+            g_ml_lines[g_ml_index] = line;  // save any edits to the active line
+
+            // Erase below-lines still visible on the terminal (cursor lands on the
+            // first one after readline outputs its trailing newline).
+            if( g_ml_index < (int)g_ml_lines.size() - 1 )
+                fprintf( stdout, "\r\033[J" );
+
+            std::string entry;
+            for( size_t i = 0; i < g_ml_lines.size(); i++ )
+            {
+                if( i > 0 ) entry += "\n";
+                entry += g_ml_lines[i];
+            }
+            g_ml_index = -1;
+            g_ml_lines.clear();
             buffer.clear();
             commit_and_run( entry );
             continue;
         }
-        if( !line.empty() ) g_pending_entry.clear();
 
         if( line.empty() )
         {
