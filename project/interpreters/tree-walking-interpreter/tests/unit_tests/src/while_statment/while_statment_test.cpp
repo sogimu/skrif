@@ -4,7 +4,7 @@
 
 using namespace std;
 
-TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, SIMPLE_COUNTER )
+TEST( TREE_WALKING_INTERPRETER_WHILE_STATMENT, SIMPLE_COUNTER )
 {
     // ARRANGE
     const auto& input = R"""({ var counter = 0; while( counter < 5 ) { counter = counter + 1; } return counter; })""";
@@ -18,7 +18,7 @@ TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, SIMPLE_COUNTER )
     EXPECT_EQ( result.get_int(), 5 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, ACCUMULATOR )
+TEST( TREE_WALKING_INTERPRETER_WHILE_STATMENT, ACCUMULATOR )
 {
     // ARRANGE
     const auto& input = R"""({ var sum = 0; var i = 1; while( i <= 10 ) { sum = sum + i; i = i + 1; } return sum; })""";
@@ -32,7 +32,7 @@ TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, ACCUMULATOR )
     EXPECT_EQ( result.get_int(), 55 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, FACTORIAL )
+TEST( TREE_WALKING_INTERPRETER_WHILE_STATMENT, FACTORIAL )
 {
     // ARRANGE
     const auto& input = R"""({ var n = 5; var fact = 1; var i = 1; while( i <= n ) { fact = fact * i; i = i + 1; } return fact; })""";
@@ -46,7 +46,7 @@ TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, FACTORIAL )
     EXPECT_EQ( result.get_int(), 120 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, NESTED_LOOP )
+TEST( TREE_WALKING_INTERPRETER_WHILE_STATMENT, NESTED_LOOP )
 {
     // ARRANGE
     const auto& input = R"""({ 
@@ -72,7 +72,7 @@ TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, NESTED_LOOP )
     EXPECT_EQ( result.get_int(), 6 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, BREAK_CONDITION_FALSE )
+TEST( TREE_WALKING_INTERPRETER_WHILE_STATMENT, BREAK_CONDITION_FALSE )
 {
     // ARRANGE
     const auto& input = R"""({ var i = 10; while( i < 5 ) { i = i + 1; } return i; })""";
@@ -86,7 +86,7 @@ TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, BREAK_CONDITION_FALSE )
     EXPECT_EQ( result.get_int(), 10 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_WHILE_STATMENT, WITH_ARRAY_MODIFICATION )
+TEST( TREE_WALKING_INTERPRETER_WHILE_STATMENT, WITH_ARRAY_MODIFICATION )
 {
     // ARRANGE
     const auto& input = R"""({ 
