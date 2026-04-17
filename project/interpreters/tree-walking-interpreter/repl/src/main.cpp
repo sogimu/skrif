@@ -132,10 +132,7 @@ int main()
         std::string line(line_cstr);
         free( line_cstr );
 
-        if( !buffer.empty() ) buffer += "\n";
-        buffer += line;
-
-        if( isInputComplete(buffer) )
+        if( line.empty() )
         {
             if( !buffer.empty() )
             {
@@ -155,6 +152,30 @@ int main()
                 }
                 buffer.clear();
             }
+            continue;
+        }
+
+        bool starting_fresh = buffer.empty();
+        if( !buffer.empty() ) buffer += "\n";
+        buffer += line;
+
+        if( starting_fresh && isInputComplete(buffer) )
+        {
+            add_history( buffer.c_str() );
+            try
+            {
+                Interpreter naive_stack_machine;
+                auto result0 = naive_stack_machine.eval( buffer.c_str() );
+                std::cout << result0 << std::endl;
+            }
+            catch( const SyntaxException& e )
+            {
+                const auto& stack = e.stack();
+                const auto& last_node = *stack.rbegin();
+                const auto last_token = last_node->lexical_tokens().at(0);
+                PointToSyntaxError( buffer, last_token.line, last_token.col );
+            }
+            buffer.clear();
         }
     }
 
