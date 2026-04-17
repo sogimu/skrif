@@ -4,7 +4,7 @@
 
 using namespace std;
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, RETURN_INT )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, RETURN_INT )
 {
    // ARRANGE
    const auto& input = R"""({ function foo() { return 234; } return foo(); })""";
@@ -18,7 +18,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, RETURN_INT )
    EXPECT_EQ( result.get_int(), 234 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, CALL_WITH_INT )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, CALL_WITH_INT )
 {
    // ARRANGE
    const auto& input = R"""({ function foo(val) { return 234 + val; } return foo(1); })""";
@@ -32,7 +32,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, CALL_WITH_INT )
    EXPECT_EQ( result.get_int(), 235 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, CALL_WITH_INT_TWO_TIMES )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, CALL_WITH_INT_TWO_TIMES )
 {
    // ARRANGE
    const auto& input = R"""({ function foo(val) { return 234 + val; } return foo(1) + foo(2); })""";
@@ -46,7 +46,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, CALL_WITH_INT_TWO_TIMES )
    EXPECT_EQ( result.get_int(), 471 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, BIN_EXPR_LESS_BIN_EXPR )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, BIN_EXPR_LESS_BIN_EXPR )
 {
    // ARRANGE
    const auto& input = R"""({ var counter = 0; function foo(val) { print(val); counter = counter + 1; if( val > 0 ) { foo(val-1); } } foo(5); return counter; })""";
@@ -60,7 +60,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, BIN_EXPR_LESS_BIN_EXPR )
    EXPECT_EQ( result.get_int(), 6 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, MULTIPLE_PARAMETERS )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, MULTIPLE_PARAMETERS )
 {
    // ARRANGE
    const auto& input = R"""({ function add(a, b, c) { return a + b + c; } return add(10, 20, 30); })""";
@@ -74,7 +74,63 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, MULTIPLE_PARAMETERS )
    EXPECT_EQ( result.get_int(), 60 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, LOCAL_VARIABLE_SCOPE )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, MEMBER_NOTATION_BRACKET_NO_ARGS )
+{
+   // ARRANGE
+   const auto& input = R"""({ function greet() { return 42; }; var obj = {}; obj["fn"] = greet; return obj["fn"](); })""";
+
+   // ACT
+   Interpreter interpreter;
+   auto result = interpreter.eval( input );
+
+   // ASSERT
+   EXPECT_EQ( result.is_int(), true );
+   EXPECT_EQ( result.get_int(), 42 );
+}
+
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, MEMBER_NOTATION_DOT_NO_ARGS )
+{
+   // ARRANGE
+   const auto& input = R"""({ function greet() { return 42; }; var obj = {}; obj.fn = greet; return obj.fn(); })""";
+
+   // ACT
+   Interpreter interpreter;
+   auto result = interpreter.eval( input );
+
+   // ASSERT
+   EXPECT_EQ( result.is_int(), true );
+   EXPECT_EQ( result.get_int(), 42 );
+}
+
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, MEMBER_NOTATION_BRACKET_WITH_ARGS )
+{
+   // ARRANGE
+   const auto& input = R"""({ function add(a, b) { return a + b; }; var obj = {}; obj["fn"] = add; return obj["fn"](10, 20); })""";
+
+   // ACT
+   Interpreter interpreter;
+   auto result = interpreter.eval( input );
+
+   // ASSERT
+   EXPECT_EQ( result.is_int(), true );
+   EXPECT_EQ( result.get_int(), 30 );
+}
+
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, MEMBER_NOTATION_DOT_WITH_ARGS )
+{
+   // ARRANGE
+   const auto& input = R"""({ function add(a, b) { return a + b; }; var obj = {}; obj.fn = add; return obj.fn(10, 20); })""";
+
+   // ACT
+   Interpreter interpreter;
+   auto result = interpreter.eval( input );
+
+   // ASSERT
+   EXPECT_EQ( result.is_int(), true );
+   EXPECT_EQ( result.get_int(), 30 );
+}
+
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, LOCAL_VARIABLE_SCOPE )
 {
    // ARRANGE
    const auto& input = R"""({
@@ -95,7 +151,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, LOCAL_VARIABLE_SCOPE )
    EXPECT_EQ( result.get_int(), 150 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, GLOBAL_VARIABLE_MODIFICATION )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, GLOBAL_VARIABLE_MODIFICATION )
 {
    // ARRANGE
    const auto& input = R"""({
@@ -118,7 +174,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, GLOBAL_VARIABLE_MODIFICATION )
    EXPECT_EQ( result.get_int(), 3 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, LOCAL_VARIABLE_SHADOW_GLOBAL )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, LOCAL_VARIABLE_SHADOW_GLOBAL )
 {
    // ARRANGE
    const auto& input = R"""({
@@ -139,7 +195,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, LOCAL_VARIABLE_SHADOW_GLOBAL )
    EXPECT_EQ( result.get_int(), 50 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, NESTED_FUNCTIONS )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, NESTED_FUNCTIONS )
 {
    // ARRANGE
    const auto& input = R"""({
@@ -161,7 +217,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, NESTED_FUNCTIONS )
    EXPECT_EQ( result.get_int(), 15 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, FUNCTION_RETURNING_FUNCTION )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, FUNCTION_RETURNING_FUNCTION )
 {
    // ARRANGE
    const auto& input = R"""({
@@ -184,7 +240,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, FUNCTION_RETURNING_FUNCTION )
    EXPECT_EQ( result.get_int(), 10 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, PARAMETER_SCOPE_ISOLATION )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, PARAMETER_SCOPE_ISOLATION )
 {
    // ARRANGE
    const auto& input = R"""({
@@ -204,7 +260,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, PARAMETER_SCOPE_ISOLATION )
    EXPECT_EQ( result.get_int(), 51 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, RECURSIVE_FIBONACCI )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, RECURSIVE_FIBONACCI )
 {
    // ARRANGE
    const auto& input = R"""({
@@ -227,7 +283,7 @@ TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, RECURSIVE_FIBONACCI )
    EXPECT_EQ( result.get_int(), 13 );
 }
 
-TEST( NAIVE_STACK_INTERPRETER_FUNCTION_CALL, FUNCTION_WITH_ARRAY_PARAMETER )
+TEST( TREE_WALKING_INTERPRETER_FUNCTION_CALL, FUNCTION_WITH_ARRAY_PARAMETER )
 {
    // ARRANGE
    const auto& input = R"""({
