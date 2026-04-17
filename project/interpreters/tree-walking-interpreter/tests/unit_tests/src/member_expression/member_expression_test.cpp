@@ -242,3 +242,59 @@ TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, DOT_CHAINED_ACCESS )
     EXPECT_EQ( result.is_string(), true );
     EXPECT_EQ( result.get_string(), "Bob" );
 }
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, MEMBER_FUNCTION_CALL_BRACKET_NO_ARGS )
+{
+    // ARRANGE
+    const auto& input = R"""({ function greet() { return 42; }; var obj = {}; obj["fn"] = greet; return obj["fn"](); })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_int(), true );
+    EXPECT_EQ( result.get_int(), 42 );
+}
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, MEMBER_FUNCTION_CALL_DOT_NO_ARGS )
+{
+    // ARRANGE
+    const auto& input = R"""({ function greet() { return 42; }; var obj = {}; obj.fn = greet; return obj.fn(); })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_int(), true );
+    EXPECT_EQ( result.get_int(), 42 );
+}
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, MEMBER_FUNCTION_CALL_BRACKET_WITH_ARGS )
+{
+    // ARRANGE
+    const auto& input = R"""({ function add(a, b) { return a + b; }; var obj = {}; obj["fn"] = add; return obj["fn"](10, 20); })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_int(), true );
+    EXPECT_EQ( result.get_int(), 30 );
+}
+
+TEST( NAIVE_STACK_INTERPRETER_MEMBER_EXPRESSION, MEMBER_FUNCTION_CALL_DOT_WITH_ARGS )
+{
+    // ARRANGE
+    const auto& input = R"""({ function add(a, b) { return a + b; }; var obj = {}; obj.fn = add; return obj.fn(10, 20); })""";
+
+    // ACT
+    Interpreter interpreter;
+    auto result = interpreter.eval( input );
+
+    // ASSERT
+    EXPECT_EQ( result.is_int(), true );
+    EXPECT_EQ( result.get_int(), 30 );
+}

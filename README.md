@@ -144,7 +144,7 @@ ctest --verbose
 - [x] **Array**
 - [x] **Object**
 - [x] **Function call** Standart notation
-- [ ] **Function call** Member notation
+- [x] **Function call** Member notation
 - [x] **Member expresson** Bracket notation
 - [x] **Member expresson** dot notation
 - [ ] **Standart library** Console object
