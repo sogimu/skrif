@@ -92,6 +92,29 @@ void PointToSyntaxError( const std::string& text, int line, int col )
   }
 }
 
+static std::string g_history_file;
+static void save_history_file( const std::string& path );  // forward declaration
+
+static void commit_and_run( const std::string& code )
+{
+    add_history( code.c_str() );
+    save_history_file( g_history_file );  // persist before running (survives crashes)
+
+    try
+    {
+        Interpreter naive_stack_machine;
+        auto result = naive_stack_machine.eval( code.c_str() );
+        std::cout << result << std::endl;
+    }
+    catch( const SyntaxException& e )
+    {
+        const auto& stack = e.stack();
+        const auto& last_node = *stack.rbegin();
+        const auto last_token = last_node->lexical_tokens().at(0);
+        PointToSyntaxError( code, last_token.line, last_token.col );
+    }
+}
+
 static void execute_code( const std::string& code )
 {
     try
@@ -197,6 +220,8 @@ int main()
 
     if( !ensureDirExists(config_dir) ) return 1;
 
+    g_history_file = history_file;
+
     if( access( history_file.c_str(), F_OK ) == 0 )
         load_history_file( history_file );
 
@@ -225,8 +250,7 @@ int main()
             std::string entry = g_pending_entry;
             g_pending_entry.clear();
             buffer.clear();
-            add_history( entry.c_str() );
-            execute_code( entry );
+            commit_and_run( entry );
             continue;
         }
         if( !line.empty() ) g_pending_entry.clear();
@@ -235,8 +259,7 @@ int main()
         {
             if( !buffer.empty() )
             {
-                add_history( buffer.c_str() );
-                execute_code( buffer );
+                commit_and_run( buffer );
                 buffer.clear();
             }
             continue;
@@ -248,8 +271,7 @@ int main()
 
         if( starting_fresh && isInputComplete(buffer) )
         {
-            add_history( buffer.c_str() );
-            execute_code( buffer );
+            commit_and_run( buffer );
             buffer.clear();
         }
     }
