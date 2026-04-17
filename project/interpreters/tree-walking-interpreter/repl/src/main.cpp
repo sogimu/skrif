@@ -96,7 +96,8 @@ void PointToSyntaxError( const std::string& text, int line, int col )
 int main()
 {
     std::cout << "JavaScript AST REPL. Enter JavaScript code:\n";
-    std::cout << "For exit and save history of commands type Ctrl+D.\n";
+    std::cout << "Multiline input is supported (open braces continue to next line).\n";
+    std::cout << "Ctrl+D to exit and save history.\n";
 
     const char* home = getenv("HOME");
     if( !home )
@@ -131,33 +132,30 @@ int main()
         std::string line(line_cstr);
         free( line_cstr );
 
-        // If enter on empty line - user is finsih input
-        if( line.empty() )
+        if( !buffer.empty() ) buffer += "\n";
+        buffer += line;
+
+        if( isInputComplete(buffer) )
         {
             if( !buffer.empty() )
             {
-               add_history( buffer.c_str() );
-               try 
-               {
-                 Interpreter naive_stack_machine;
-                 auto result0 = naive_stack_machine.eval( buffer.c_str() );
-                 std::cout << result0 << std::endl;
-               } 
-               catch( const SyntaxException& e ) 
-               {
-                  const auto& stack = e.stack();
-                  const auto& last_node = *stack.rbegin();
-                  const auto last_token = last_node->lexical_tokens().at(0);
-                  PointToSyntaxError( buffer, last_token.line, last_token.col ); 
-               }
-
+                add_history( buffer.c_str() );
+                try
+                {
+                    Interpreter naive_stack_machine;
+                    auto result0 = naive_stack_machine.eval( buffer.c_str() );
+                    std::cout << result0 << std::endl;
+                }
+                catch( const SyntaxException& e )
+                {
+                    const auto& stack = e.stack();
+                    const auto& last_node = *stack.rbegin();
+                    const auto last_token = last_node->lexical_tokens().at(0);
+                    PointToSyntaxError( buffer, last_token.line, last_token.col );
+                }
                 buffer.clear();
             }
-            continue;
         }
-
-        if( !buffer.empty() ) buffer += "\n";
-        buffer += line;
     }
 
     if( write_history( history_file.c_str() ) != 0 )
