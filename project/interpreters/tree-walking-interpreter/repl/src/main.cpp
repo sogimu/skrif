@@ -18,7 +18,6 @@ static const char HIST_NL = '\x1E';
 
 // Pending multiline entry recalled from history (waiting for Enter).
 static std::string g_pending_entry;
-static std::string g_pending_first_line;
 
 bool ensureDirExists( const std::string& path )
 {
@@ -110,9 +109,10 @@ static void execute_code( const std::string& code )
     }
 }
 
-// Print a multiline entry with >>> / ... prompts (above the readline input line).
+// Print a multiline entry with >>> / ... prompts, replacing the current readline line.
 static void print_entry_preview( const std::string& text )
 {
+    fprintf( rl_outstream, "\r\033[K" );  // erase the current >>> prompt
     std::istringstream ss( text );
     std::string line;
     bool first = true;
@@ -132,18 +132,17 @@ static int navigate_history( int dir )
 
     if( text.find('\n') != std::string::npos )
     {
-        // Multiline entry: print formatted preview above the prompt, then show
-        // only the first line in the readline buffer so the display stays clean.
+        // Multiline entry: erase the current prompt line, print the full snippet
+        // with >>> / ... prefixes, then leave readline with an empty buffer.
+        // Pressing Enter on the empty prompt executes the pending entry.
         print_entry_preview( text );
         rl_on_new_line();
         g_pending_entry = text;
-        g_pending_first_line = text.substr( 0, text.find('\n') );
-        rl_replace_line( g_pending_first_line.c_str(), 1 );
+        rl_replace_line( "", 1 );
     }
     else
     {
         g_pending_entry.clear();
-        g_pending_first_line.clear();
         rl_replace_line( text.c_str(), 1 );
     }
 
@@ -220,20 +219,17 @@ int main()
         std::string line( line_cstr );
         free( line_cstr );
 
-        // If the user pressed Enter on a recalled multiline history entry
-        // (first line unchanged), execute the full snippet.
-        if( !g_pending_entry.empty() && line == g_pending_first_line )
+        // Empty Enter after a multiline history preview executes the pending entry.
+        if( !g_pending_entry.empty() && line.empty() )
         {
             std::string entry = g_pending_entry;
             g_pending_entry.clear();
-            g_pending_first_line.clear();
             buffer.clear();
             add_history( entry.c_str() );
             execute_code( entry );
             continue;
         }
-        g_pending_entry.clear();
-        g_pending_first_line.clear();
+        if( !line.empty() ) g_pending_entry.clear();
 
         if( line.empty() )
         {
