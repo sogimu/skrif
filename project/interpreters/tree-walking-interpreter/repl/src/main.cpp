@@ -2,22 +2,23 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <sstream>
 
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <cstdlib>
-#include <sys/stat.h>
-#include <cstring>
-#include <cerrno>
-#include <unistd.h>
 
 // Separator used in history file to encode embedded newlines.
 static const char HIST_NL = '\x1E';
 
 // Pending multiline entry recalled from history (waiting for Enter).
 static std::string g_pending_entry;
+#include <cstdlib>   // getenv
+#include <sys/stat.h> // mkdir
+#include <cstring>   // strerror
+#include <cerrno>    // errno
+#include <unistd.h>  // access
 
 bool ensureDirExists( const std::string& path )
 {
@@ -202,11 +203,46 @@ static void load_history_file( const std::string& path )
     }
 }
 
-int main()
+int runFile( const std::string& path )
 {
+    std::ifstream file( path );
+    if( !file )
+    {
+        std::cerr << "Error: cannot open file '" << path << "': " << strerror( errno ) << "\n";
+        return 1;
+    }
+
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    const std::string source = ss.str();
+
+    try
+    {
+        Interpreter interpreter;
+        auto result = interpreter.eval( source.c_str() );
+        std::cout << result << "\n";
+    }
+    catch( const SyntaxException& e )
+    {
+        const auto& stack = e.stack();
+        const auto& last_node = *stack.rbegin();
+        const auto last_token = last_node->lexical_tokens().at(0);
+        PointToSyntaxError( source, last_token.line, last_token.col );
+        return 1;
+    }
+    return 0;
+}
+
+int main( int argc, char* argv[] )
+{
+    if( argc > 1 )
+    {
+        return runFile( argv[1] );
+    }
+
     std::cout << "JavaScript AST REPL. Enter JavaScript code:\n";
     std::cout << "Multiline input is supported (open braces continue to next line).\n";
-    std::cout << "Ctrl+D to exit and save history.\n";
+    std::cout << "Ctrl+D or Ctrl+C to exit.\n";
 
     const char* home = getenv("HOME");
     if( !home )
