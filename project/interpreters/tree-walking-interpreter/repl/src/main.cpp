@@ -313,7 +313,7 @@ int main( int argc, char* argv[] )
         return 1;
     }
 
-    std::string config_dir = std::string(home) + "/.config/naive_stack_machine_repl";
+    std::string config_dir = std::string(home) + "/.config/tree_waling_interpreter_repl";
     std::string history_file = config_dir + "/history";
 
     if( !ensureDirExists(config_dir) ) return 1;
