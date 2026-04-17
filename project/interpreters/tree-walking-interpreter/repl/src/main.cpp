@@ -2,6 +2,8 @@
 
 #include <exception>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -12,7 +14,6 @@
 #include <cstring>   // strerror
 #include <cerrno>    // errno
 #include <unistd.h>  // access
-#include <sstream>
 
 bool ensureDirExists( const std::string& path )
 {
@@ -93,8 +94,43 @@ void PointToSyntaxError( const std::string& text, int line, int col )
   }
 }
 
-int main()
+int runFile( const std::string& path )
 {
+    std::ifstream file( path );
+    if( !file )
+    {
+        std::cerr << "Error: cannot open file '" << path << "': " << strerror( errno ) << "\n";
+        return 1;
+    }
+
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    const std::string source = ss.str();
+
+    try
+    {
+        Interpreter interpreter;
+        auto result = interpreter.eval( source.c_str() );
+        std::cout << result << "\n";
+    }
+    catch( const SyntaxException& e )
+    {
+        const auto& stack = e.stack();
+        const auto& last_node = *stack.rbegin();
+        const auto last_token = last_node->lexical_tokens().at(0);
+        PointToSyntaxError( source, last_token.line, last_token.col );
+        return 1;
+    }
+    return 0;
+}
+
+int main( int argc, char* argv[] )
+{
+    if( argc > 1 )
+    {
+        return runFile( argv[1] );
+    }
+
     std::cout << "JavaScript AST REPL. Enter JavaScript code:\n";
     std::cout << "For exit and save history of commands type Ctrl+D.\n";
 
