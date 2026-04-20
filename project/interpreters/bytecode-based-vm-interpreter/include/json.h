@@ -75,7 +75,9 @@ public:
     Json(const char* v)   : type_(Type::String), str_(std::make_shared<std::string>(v)) {}
     Json(const std::string& v) : type_(Type::String), str_(std::make_shared<std::string>(v)) {}
     Json(const std::vector<Json>& v) : type_(Type::Array), array_(std::make_shared<std::vector<Json>>(v)) {}
+    Json(std::vector<Json>&& v) : type_(Type::Array), array_(std::make_shared<std::vector<Json>>(std::move(v))) {}
     Json(const std::map<std::string, Json>& v) : type_(Type::Object), object_(std::make_shared<std::map<std::string, Json>>(v)) {}
+    Json(std::map<std::string, Json>&& v) : type_(Type::Object), object_(std::make_shared<std::map<std::string, Json>>(std::move(v))) {}
     Json(const json::Function& v) : type_(Type::Function), function_(new json::Function(v)) {}
 
     Json(const Json& other) { copy_from(other); }

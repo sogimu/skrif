@@ -15,26 +15,26 @@ void Chunk::patch_operand(int idx, int32_t val)
 
 int Chunk::add_int(int v)
 {
-    for (int i = 0; i < static_cast<int>(int_constants.size()); ++i)
-        if (int_constants[i] == v) return i;
+    auto [it, inserted] = int_index_.emplace(v, (int)int_constants.size());
+    if (!inserted) return it->second;
     int_constants.push_back(v);
-    return static_cast<int>(int_constants.size()) - 1;
+    return it->second;
 }
 
 int Chunk::add_double(double v)
 {
-    for (int i = 0; i < static_cast<int>(double_constants.size()); ++i)
-        if (double_constants[i] == v) return i;
+    auto [it, inserted] = double_index_.emplace(v, (int)double_constants.size());
+    if (!inserted) return it->second;
     double_constants.push_back(v);
-    return static_cast<int>(double_constants.size()) - 1;
+    return it->second;
 }
 
 int Chunk::add_string(const std::string& s)
 {
-    for (int i = 0; i < static_cast<int>(string_constants.size()); ++i)
-        if (string_constants[i] == s) return i;
+    auto [it, inserted] = string_index_.emplace(s, (int)string_constants.size());
+    if (!inserted) return it->second;
     string_constants.push_back(s);
-    return static_cast<int>(string_constants.size()) - 1;
+    return it->second;
 }
 
 int Chunk::add_function_proto(std::shared_ptr<json::Function> fp)

@@ -18,12 +18,12 @@ void EnvScope::set_parent( const std::shared_ptr<EnvScope>& parent )
     mParent = parent;
 }
 
-std::map< std::string, Json >::iterator EnvScope::begin(VaribleType)
+std::unordered_map< std::string, Json >::iterator EnvScope::begin(VaribleType)
 {
     return mVaribleByKey.begin();
 }
 
-std::map< std::string, Json >::iterator EnvScope::end(VaribleType)
+std::unordered_map< std::string, Json >::iterator EnvScope::end(VaribleType)
 {
     return mVaribleByKey.end();
 }

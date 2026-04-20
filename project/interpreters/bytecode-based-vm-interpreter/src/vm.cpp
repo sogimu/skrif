@@ -67,6 +67,7 @@ Json& VM::peek() { return stack_.back(); }
 Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
 {
     stack_.clear();
+    stack_.reserve(256);
     frames_.clear();
 
     frames_.push_back({ &top_chunk, 0, 0, global_env });
@@ -152,10 +153,12 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
 
         case Opcode::MAKE_ARRAY: {
             int n = instr.operand;
-            std::vector<Json> elems(n);
-            for (int i = n - 1; i >= 0; --i)
-                elems[i] = pop();
-            push(Json{elems});
+            int base = (int)stack_.size() - n;
+            std::vector<Json> elems(
+                std::make_move_iterator(stack_.begin() + base),
+                std::make_move_iterator(stack_.end()));
+            stack_.resize(base);
+            push(Json{std::move(elems)});
             break;
         }
 
@@ -236,10 +239,13 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
         case Opcode::CALL: {
             int n_args = instr.operand;
 
-            // Pop arguments (they were pushed left-to-right, so last arg is on top)
-            std::vector<Json> args(n_args);
-            for (int i = n_args - 1; i >= 0; --i)
-                args[i] = pop();
+            // Arguments are already contiguous and in order at the top of the stack.
+            // Move them out in one pass, then pop the callee sitting below them.
+            int args_base = (int)stack_.size() - n_args;
+            std::vector<Json> args(
+                std::make_move_iterator(stack_.begin() + args_base),
+                std::make_move_iterator(stack_.end()));
+            stack_.resize(args_base);
 
             Json callee = pop();
             if (!callee.is_function())

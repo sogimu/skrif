@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PROGRAMS_DIR="$SCRIPT_DIR/programs"
 
-TREE_WALKING="$PROJECT_ROOT/out/RelWithDebInfo/project/interpreters/tree-walking-interpreter/repl/tree_walking_interpreter_repl"
-BYTECODE_VM="$PROJECT_ROOT/out/RelWithDebInfo/project/interpreters/bytecode-based-vm-interpreter/repl/bytecode_vm_interpreter_repl"
+TREE_WALKING="$PROJECT_ROOT/out/Release/project/interpreters/tree-walking-interpreter/repl/tree_walking_interpreter_repl"
+BYTECODE_VM="$PROJECT_ROOT/out/Release/project/interpreters/bytecode-based-vm-interpreter/repl/bytecode_vm_interpreter_repl"
 
 RED='\033[0;31m'; YEL='\033[1;33m'; GRN='\033[0;32m'; CYN='\033[1;36m'; BLD='\033[1m'; NC='\033[0m'
 

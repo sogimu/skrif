@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <optional>
 #include <iostream>
@@ -27,13 +27,13 @@ public:
     const Json& operator[](const std::string& key) const;
     bool contains(const std::string& key) const;
 
-    std::map< std::string, Json >::iterator begin(VaribleType varible_type);
-    std::map< std::string, Json >::iterator end(VaribleType varible_type);
+    std::unordered_map< std::string, Json >::iterator begin(VaribleType varible_type);
+    std::unordered_map< std::string, Json >::iterator end(VaribleType varible_type);
     std::shared_ptr<EnvScope> getParent() const;
 
     void print() const;
 
 private:
     std::shared_ptr<EnvScope> mParent;
-    mutable std::map< std::string, Json > mVaribleByKey;
+    mutable std::unordered_map< std::string, Json > mVaribleByKey;
 };
