@@ -51,6 +51,18 @@ if ! $HAVE_TW && ! $HAVE_BVM; then
     echo -e "${RED}No custom interpreters available. Aborting.${NC}"
     exit 1
 fi
+
+# ── Measure Node.js startup overhead ────────────────────────────────────────
+
+printf "  Measuring Node.js startup... "
+_startup_min=99999
+for _i in 1 2 3 4 5; do
+    _t0=$(date +%s%N); node -e "" >/dev/null 2>&1; _t1=$(date +%s%N)
+    _t=$(( (_t1 - _t0) / 1000000 ))
+    (( _t < _startup_min )) && _startup_min=$_t
+done
+NODE_STARTUP=$_startup_min
+echo -e "${GRN}${NODE_STARTUP} ms${NC} (subtracted from V8 times)"
 echo ""
 
 # ── Timing helpers ──────────────────────────────────────────────────────────
@@ -64,17 +76,20 @@ time_ms() {
     echo $(( (t1 - t0) / 1000000 ))
 }
 
-# Run Node.js with a `var print = console.log;` shim prepended to the file
+# Run Node.js with a `var print = console.log;` shim; returns net execution
+# time with startup overhead subtracted (floor 1 ms)
 time_v8() {
     local file="$1" tmp
     tmp=$(mktemp /tmp/skrif_bench_XXXXXX.js)
     { printf 'var print = console.log;\n'; cat "$file"; } >"$tmp"
-    local t0 t1
+    local t0 t1 elapsed net
     t0=$(date +%s%N)
     node "$tmp" >/dev/null 2>&1 || true
     t1=$(date +%s%N)
     rm -f "$tmp"
-    echo $(( (t1 - t0) / 1000000 ))
+    elapsed=$(( (t1 - t0) / 1000000 ))
+    net=$(( elapsed - NODE_STARTUP ))
+    echo $(( net > 1 ? net : 1 ))
 }
 
 # Format milliseconds into a human-readable fixed-width string
@@ -122,7 +137,7 @@ for prog in "${PROGRAMS[@]}"; do
     echo -e "${BLD}  $name${NC}"
     ssep
 
-    printf "  %-28s" "V8 (Node.js)"
+    printf "  %-28s" "V8 (net, excl. startup)"
     v8_ms=$(time_v8 "$prog")
     T_V8["$name"]=$v8_ms
     printf "%s   %6s  baseline\n" "$(fmt "$v8_ms")" "1.0x"
@@ -155,7 +170,7 @@ dsep
 echo -e "${BLD}  SUMMARY  —  slowdown factor relative to V8 (higher = slower)${NC}"
 dsep
 
-printf "${BLD}  %-24s  %10s" "Benchmark" "V8"
+printf "${BLD}  %-24s  %10s" "Benchmark" "V8 (net)"
 $HAVE_BVM && printf "  %13s" "Bytecode VM"
 $HAVE_TW  && printf "  %15s" "Tree-Walking"
 printf "${NC}\n"

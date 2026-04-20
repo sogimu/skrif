@@ -11,7 +11,7 @@
     var counter = createCounter(0);
     var i = 0;
     var result = 0;
-    while (i < 3000) {
+    while (i < 100000) {
         result = counter();
         i = i + 1;
     }
