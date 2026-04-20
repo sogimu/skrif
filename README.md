@@ -13,7 +13,7 @@ This project is an educational implementation of a JavaScript-like interpreter u
 - **LR Parser (Bottom-Up)** — efficient Shift-Reduce algorithm for syntax analysis
 - **Full Interpreter** — real-time execution of JavaScript-like code  
 - **Rich Syntax** — support for arithmetic, conditionals, functions, objects and arrays
-- **Comprehensive Testing** — 100+ unit tests for reliability
+- **Comprehensive Testing** — 200+ unit tests for reliability
 - **REPL Interface** — interactive console for quick testing
 - **Modular Architecture** — clean separation of parser and interpreter
 
@@ -49,8 +49,14 @@ make -j$(nproc)
 
 ### Run REPL
 
+Tree-walking interpreter:
 ```bash
 ./project/interpreters/tree-walking-interpreter/repl/repl
+```
+
+Bytecode VM interpreter:
+```bash
+./project/interpreters/bytecode-based-vm-interpreter/repl/bytecode_vm_interpreter_repl
 ```
 
 ## Examples
@@ -105,18 +111,35 @@ x is large
 
 ```
 project/
-├── parser/           # LR parser and AST
-├── interpreters/     # Execution engines
-│   └── tree-walking-interpreter/
-└── libs/            # External libraries (GoogleTest)
+├── parser/                          # LR parser and AST
+├── interpreters/                    # Execution engines
+│   ├── tree-walking-interpreter/    # Direct AST traversal
+│   └── bytecode-based-vm-interpreter/ # Compile to bytecode, then execute
+└── libs/                           # External libraries (GoogleTest)
 ```
 
-### Key Components:
+Two interpreter implementations share the same parser and language semantics:
+
+### Tree-Walking Interpreter
+
+Executes by walking the AST directly on each evaluation. Simple and straightforward.
+
+- [`StackMachine`](project/interpreters/tree-walking-interpreter/include/stack_machine.h) — AST visitor that evaluates expressions
+- [`Interpreter`](project/interpreters/tree-walking-interpreter/include/interpreter.h) — high-level `eval()` interface
+
+### Bytecode VM Interpreter
+
+Two-phase execution: compile AST to bytecode once, then run in a dispatch loop.
+
+- [`Compiler`](project/interpreters/bytecode-based-vm-interpreter/include/compiler.h) — AST visitor that emits bytecode
+- [`Chunk`](project/interpreters/bytecode-based-vm-interpreter/include/chunk.h) — bytecode buffer and constant pools
+- [`VM`](project/interpreters/bytecode-based-vm-interpreter/include/vm.h) — stack-based dispatch loop
+- [`Interpreter`](project/interpreters/bytecode-based-vm-interpreter/include/interpreter.h) — high-level `eval()` interface
+
+### Shared Components
 
 - [`LexicalTokens`](project/parser/include/lexical_tokens/lexical_tokens.h) — lexical analyzer
-- [`AbstractSyntaxTree`](project/parser/include/abstract_syntax_tree/abstract_syntax_tree.h) — AST construction
-- [`StackMachine`](project/interpreters/tree-walking-interpreter/include/stack_machine.h) — stack-based interpreter
-- [`Interpreter`](project/interpreters/tree-walking-interpreter/include/interpreter.h) — high-level interface
+- [`AbstractSyntaxTree`](project/parser/include/abstract_syntax_tree/abstract_syntax_tree.h) — AST construction (LR parser)
 
 ## Testing
 
@@ -131,8 +154,11 @@ ctest --verbose
 # Parser tests
 ./project/parser/tests/unit_tests/parser_tests
 
-# Interpreter tests  
-./project/interpreters/tree-walking-interpreter/tests/unit_tests/interpreter_tests
+# Tree-walking interpreter tests
+./project/interpreters/tree-walking-interpreter/tests/unit_tests/tree_walking_interpreter_unit_tests
+
+# Bytecode VM interpreter tests
+./project/interpreters/bytecode-based-vm-interpreter/tests/unit_tests/bytecode_vm_interpreter_unit_tests
 ```
 
 ## Roadmap
