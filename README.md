@@ -4,6 +4,19 @@
 
 [![Workflow Status](https://github.com/sogimu/skrif/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/sogimu/skrif/actions/workflows/cmake-single-platform.yml)
 
+## Performance vs V8
+
+`RelWithDebInfo` build · Node.js v18.20.8 · startup overhead subtracted from V8 times
+
+| Benchmark | V8 (net) | Bytecode VM | Tree-Walking |
+|---|---|---|---|
+| Recursive fib(25) | 5 ms | 17× slower | **1123× slower** |
+| Iterative fib(200k) | 7 ms | 13× slower | **930× slower** |
+| Nested loops 400×400 | 5 ms | 11× slower | **912× slower** |
+| Closure counter ×100k | 6 ms | 9× slower | **616× slower** |
+
+Run benchmarks: `bash benchmarks/run.sh`
+
 ## Overview
 
 This project is an educational implementation of a JavaScript-like interpreter using LR (bottom-up) parsing. Started as a learning exercise, it demonstrates core compiler construction concepts and may evolve into a more comprehensive language implementation.
