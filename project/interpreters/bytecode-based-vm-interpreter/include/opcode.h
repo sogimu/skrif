@@ -1,0 +1,36 @@
+#pragma once
+#include <cstdint>
+
+enum class Opcode : uint8_t {
+    PUSH_NULL,
+    PUSH_BOOL,
+    PUSH_INT,
+    PUSH_DOUBLE,
+    PUSH_STRING,
+    LOAD,
+    STORE_LOCAL,
+    STORE_GLOBAL,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    NEG,
+    EQ,
+    NEQ,
+    LT,
+    LTE,
+    GT,
+    GTE,
+    NOT,
+    MAKE_ARRAY,
+    MAKE_OBJECT,
+    GET_MEMBER,
+    SET_MEMBER,
+    JUMP,
+    JUMP_IF_FALSE,
+    MAKE_CLOSURE,
+    CALL,
+    RETURN,
+    PRINT,
+    POP
+};
