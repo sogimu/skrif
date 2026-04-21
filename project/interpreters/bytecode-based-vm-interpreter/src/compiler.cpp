@@ -34,10 +34,20 @@ void Compiler::compile_node(const ISyntaxNodeSP& node)
         node->accept(shared_from_this());
 }
 
+static bool has_nested_functions(const ISyntaxNodeSP& node)
+{
+    if (!node) return false;
+    if (std::dynamic_pointer_cast<FunctionStatmentSyntaxNode>(node)) return true;
+    for (const auto& child : node->Children())
+        if (has_nested_functions(child)) return true;
+    return false;
+}
+
 Chunk Compiler::compile(const ISyntaxNodeSP& root)
 {
     top_chunk_ = Chunk{};
     chunk_stack_.clear();
+    fn_stack_.clear();
     chunk_stack_.push_back(&top_chunk_);
     compile_node(root);
     chunk_stack_.pop_back();
@@ -77,6 +87,13 @@ void Compiler::visit(const FSyntaxNodeSP& node)
 
 void Compiler::visit(const VaribleSyntaxNodeSP& node)
 {
+    if (!fn_stack_.empty() && fn_stack_.back().use_slots) {
+        auto it = fn_stack_.back().slots.find(node->name());
+        if (it != fn_stack_.back().slots.end()) {
+            cur().emit(Opcode::LOAD_SLOT, it->second);
+            return;
+        }
+    }
     cur().emit(Opcode::LOAD, cur().add_string(node->name()));
 }
 
@@ -224,7 +241,28 @@ void Compiler::visit(const VaribleAssigmentStatmentSyntaxNodeSP& node)
     if (node->target() != nullptr) {
         // Simple variable assignment: name = expr
         compile_node(node->source());
-        int name_idx = cur().add_string(node->target()->value());
+        const std::string& name = node->target()->value();
+
+        if (!fn_stack_.empty() && fn_stack_.back().use_slots) {
+            FnContext& ctx = fn_stack_.back();
+            auto it = ctx.slots.find(name);
+            if (it != ctx.slots.end()) {
+                // Known slot variable (re-assignment)
+                cur().emit(Opcode::STORE_SLOT, it->second);
+                return;
+            }
+            if (node->context() == VaribleAssigmentStatmentSyntaxNode::Context::LOCAL) {
+                // New local declaration: allocate a slot
+                int slot = ctx.next_slot++;
+                ctx.slots[name] = slot;
+                if (slot >= cur().num_locals) cur().num_locals = slot + 1;
+                cur().emit(Opcode::STORE_SLOT, slot);
+                return;
+            }
+            // Global assignment to an unknown name: falls through to STORE_GLOBAL
+        }
+
+        int name_idx = cur().add_string(name);
         if (node->context() == VaribleAssigmentStatmentSyntaxNode::Context::LOCAL)
             cur().emit(Opcode::STORE_LOCAL, name_idx);
         else
@@ -247,21 +285,38 @@ void Compiler::visit(const VaribleAssigmentStatmentSyntaxNodeSP& node)
 
 void Compiler::visit(const FunctionStatmentSyntaxNodeSP& node)
 {
-    // Build the function body chunk
-    // node->scope() calls dynamic_cast<FunctionScopeSyntaxNode> on what the grammar actually
-    // stores as a plain ScopeSyntaxNode — it always returns null. Use the last child directly.
-    auto body_chunk = std::make_shared<Chunk>();
-    chunk_stack_.push_back(body_chunk.get());
-    compile_node(node->operator[](node->Children().size() - 1));  // body (ScopeSyntaxNode)
-    // ScopeSyntaxNode visitor doesn't emit fall-off return; add it here
-    cur().emit(Opcode::PUSH_NULL);
-    cur().emit(Opcode::RETURN);
-    chunk_stack_.pop_back();
-
     // Collect parameter names (arguments() includes scope as last null element — filter it)
     std::vector<std::string> params;
     for (auto& arg : node->arguments())
         if (arg) params.push_back(arg->value());
+
+    // Pre-scan body to decide slot eligibility
+    const auto& body_node = node->operator[](node->Children().size() - 1);
+    bool use_slots = !has_nested_functions(body_node);
+
+    // Set up per-function slot context
+    FnContext ctx;
+    ctx.use_slots = use_slots;
+    if (use_slots) {
+        int slot = 0;
+        for (const auto& p : params)
+            ctx.slots[p] = slot++;
+        ctx.next_slot = slot;
+    }
+
+    auto body_chunk = std::make_shared<Chunk>();
+    // num_locals > 0 signals slot-based dispatch in the VM; only set for slot functions
+    body_chunk->num_locals = use_slots ? (int)params.size() : 0;
+
+    fn_stack_.push_back(std::move(ctx));
+    chunk_stack_.push_back(body_chunk.get());
+
+    compile_node(body_node);
+    cur().emit(Opcode::PUSH_NULL);
+    cur().emit(Opcode::RETURN);
+
+    chunk_stack_.pop_back();
+    fn_stack_.pop_back();
 
     // Create a proto (closure set to nullptr at compile time; VM fills it at MAKE_CLOSURE)
     auto proto = std::make_shared<json::Function>(nullptr, node->name(), params, body_chunk);
@@ -269,7 +324,9 @@ void Compiler::visit(const FunctionStatmentSyntaxNodeSP& node)
 
     cur().emit(Opcode::MAKE_CLOSURE, proto_idx);
 
-    // Function definitions are always local (no var keyword needed)
+    // Function name is stored in the OUTER scope.
+    // The outer scope cannot be a slot-function if it contains a nested function definition,
+    // so STORE_LOCAL is always correct here.
     int name_idx = cur().add_string(node->name());
     cur().emit(Opcode::STORE_LOCAL, name_idx);
 }

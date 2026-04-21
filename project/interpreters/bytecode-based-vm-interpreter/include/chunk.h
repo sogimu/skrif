@@ -13,6 +13,7 @@ struct Chunk {
     std::vector<double>                          double_constants;
     std::vector<std::string>                     string_constants;
     std::vector<std::shared_ptr<json::Function>> function_protos;
+    int                                          num_locals = 0;
 
 private:
     std::unordered_map<int, int>         int_index_;

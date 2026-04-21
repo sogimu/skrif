@@ -10,10 +10,10 @@
 
 | Benchmark | V8 (net) | Bytecode VM | Tree-Walking |
 |---|---|---|---|
-| closures.js | 14 ms | 8.3× slower | **519× slower** |
-| fib_iterative.js | 14 ms | 13.9× slower | **897× slower** |
-| fib_recursive.js | 15 ms | 12.6× slower | **733× slower** |
-| nested_loops.js | 11 ms | 11.2× slower | **781× slower** |
+| closures.js | 6 ms | 7.7× slower | **517× slower** |
+| fib_iterative.js | 6 ms | 8.2× slower | **895× slower** |
+| fib_recursive.js | 7 ms | 9.4× slower | **665× slower** |
+| nested_loops.js | 6 ms | 8.2× slower | **628× slower** |
 
 Run benchmarks: `bash benchmarks/run.sh`
 

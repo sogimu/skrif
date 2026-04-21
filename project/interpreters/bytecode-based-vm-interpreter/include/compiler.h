@@ -4,6 +4,8 @@
 #include "i_syntax_node_visitor.h"
 #include <memory>
 #include <vector>
+#include <unordered_map>
+#include <string>
 
 class Compiler : public ISyntaxNodeVisitor, public std::enable_shared_from_this<Compiler> {
 public:
@@ -13,7 +15,14 @@ private:
     Chunk& cur();
     void   compile_node(const ISyntaxNodeSP& node);
 
+    struct FnContext {
+        std::unordered_map<std::string, int> slots;
+        int  next_slot = 0;
+        bool use_slots = false;
+    };
+
     std::vector<Chunk*>                 chunk_stack_;
+    std::vector<FnContext>              fn_stack_;
     Chunk                               top_chunk_;
 
     // ISyntaxNodeVisitor — terminals (noop)

@@ -33,6 +33,9 @@ public:
 
     void print() const;
 
+public:
+    bool has_closures = false;
+
 private:
     std::shared_ptr<EnvScope> mParent;
     mutable std::unordered_map< std::string, Json > mVaribleByKey;
