@@ -1,20 +1,21 @@
 cmake_minimum_required(VERSION 3.5)
 project(bytecode_vm_interpreter_repl VERSION 0.0.1 LANGUAGES CXX)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    message(STATUS "Enabling AddressSanitizer")
-    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=address,undefined)
-endif()
+# if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+#     message(STATUS "Enabling AddressSanitizer")
+#     add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+#     add_link_options(-fsanitize=address,undefined)
+# endif()
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/disassembler.cpp
 )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 find_package(Readline REQUIRED)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${READLINE_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${READLINE_INCLUDE_DIR} src)
 
 if (NOT READLINE_INCLUDE_DIR)
     message(FATAL_ERROR "Could not find readline include directory")

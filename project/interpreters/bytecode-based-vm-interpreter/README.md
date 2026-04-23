@@ -63,6 +63,8 @@ make -j$(nproc)
 
 ## REPL
 
+Start the interactive REPL:
+
 ```bash
 ./project/interpreters/bytecode-based-vm-interpreter/repl/bytecode_vm_interpreter_repl
 ```
@@ -72,6 +74,33 @@ Run a script file:
 ```bash
 ./project/interpreters/bytecode-based-vm-interpreter/repl/bytecode_vm_interpreter_repl script.js
 ```
+
+### Command-line Options
+
+- `--print-ast` - Print the Abstract Syntax Tree of the program
+- `--print-bytecode` - Print the compiled bytecode
+- `-h, --help` - Show help message
+
+Examples:
+
+```bash
+# Print AST of a script
+./bytecode_vm_interpreter_repl --print-ast script.js
+
+# Print bytecode of a script
+./bytecode_vm_interpreter_repl --print-bytecode script.js
+
+# Print both AST and bytecode
+./bytecode_vm_interpreter_repl --print-ast --print-bytecode script.js
+```
+
+### REPL Key Bindings
+
+- **Up Arrow** - Navigate to previous history entry
+- **Down Arrow** - Navigate to next history entry
+- **Ctrl+D** - Exit REPL
+- **Ctrl+C** - Exit REPL
+- **Enter** - Submit input (or continue to next line if braces are unbalanced)
 
 ## Tests
 

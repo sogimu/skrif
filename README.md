@@ -8,12 +8,12 @@
 
 `Release` build · Node.js v18.20.8 · startup overhead subtracted from V8 times
 
-| Benchmark | V8 (net) | Bytecode VM | Tree-Walking |
+| Benchmark | V8 (net) | Bytecode VM (net) | Tree-Walking |
 |---|---|---|---|
-| closures.js | 6 ms | 7.7× slower | **517× slower** |
-| fib_iterative.js | 6 ms | 8.2× slower | **895× slower** |
-| fib_recursive.js | 7 ms | 9.4× slower | **665× slower** |
-| nested_loops.js | 6 ms | 8.2× slower | **628× slower** |
+| closures.js | 5 ms | 9.0× slower | **628× slower** |
+| fib_iterative.js | 7 ms | 6.6× slower | **772× slower** |
+| fib_recursive.js | 5 ms | 13.6× slower | **947× slower** |
+| nested_loops.js | 5 ms | 10.0× slower | **780× slower** |
 
 Run benchmarks: `bash benchmarks/run.sh`
 

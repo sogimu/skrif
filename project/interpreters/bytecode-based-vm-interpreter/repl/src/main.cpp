@@ -1,4 +1,10 @@
 #include "interpreter.h"
+#include "compiler.h"
+#include "vm.h"
+#include "EnvScope.h"
+#include "lexical_tokens.h"
+#include "abstract_syntax_tree.h"
+#include "disassembler.h"
 
 #include <iostream>
 #include <fstream>
@@ -14,6 +20,9 @@
 #include <cstring>
 #include <cerrno>
 #include <unistd.h>
+
+static bool g_print_bytecode = false;
+static bool g_print_ast = false;
 
 static const char HIST_NL = '\x1E';
 
@@ -58,14 +67,32 @@ bool isInputComplete(const std::string& input)
 static std::string g_history_file;
 static void save_history_file(const std::string& path);
 
+static Json eval_with_opts(const std::string& code)
+{
+    LexicalTokens lex(code);
+    AbstractSyntaxTree ast(lex);
+
+    if (g_print_ast)
+        std::cout << ast.to_string() << std::endl;
+
+    auto compiler = std::make_shared<Compiler>();
+    Chunk chunk = compiler->compile(ast.root());
+
+    if (g_print_bytecode)
+        disassemble(std::cout, chunk, "<main>");
+
+    auto env = std::make_shared<EnvScope>();
+    VM vm;
+    return vm.run(chunk, env);
+}
+
 static void commit_and_run(const std::string& code)
 {
     add_history(code.c_str());
     save_history_file(g_history_file);
 
     try {
-        Interpreter interp;
-        auto result = interp.eval(code);
+        auto result = eval_with_opts(code);
         std::cout << result << std::endl;
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
@@ -177,9 +204,9 @@ int runFile(const std::string& path)
     std::ostringstream ss;
     ss << file.rdbuf();
     try {
-        Interpreter interp;
-        auto result = interp.eval(ss.str());
-        std::cout << result << "\n";
+        auto result = eval_with_opts(ss.str());
+        if (!g_print_bytecode && !g_print_ast)
+            std::cout << result << "\n";
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
         return 1;
@@ -189,8 +216,33 @@ int runFile(const std::string& path)
 
 int main(int argc, char* argv[])
 {
-    if (argc > 1)
-        return runFile(argv[1]);
+    std::string file_arg;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--print-bytecode")
+            g_print_bytecode = true;
+        else if (arg == "--print-ast")
+            g_print_ast = true;
+        else if (arg == "-h" || arg == "--help") {
+            std::cout << "Usage: " << argv[0] << " [--print-bytecode] [--print-ast] [file.js]\n";
+            std::cout << "\nREPL Key Bindings:\n";
+            std::cout << "  Up Arrow      Navigate to previous history entry\n";
+            std::cout << "  Down Arrow    Navigate to next history entry\n";
+            std::cout << "  Ctrl+D        Exit REPL\n";
+            std::cout << "  Ctrl+C        Exit REPL\n";
+            std::cout << "  Enter         Submit input (or continue to next line if braces are unbalanced)\n";
+            return 0;
+        }
+        else if (file_arg.empty())
+            file_arg = arg;
+        else {
+            std::cerr << "Usage: " << argv[0] << " [--print-bytecode] [--print-ast] [file.js]\n";
+            return 1;
+        }
+    }
+
+    if (!file_arg.empty())
+        return runFile(file_arg);
 
     std::cout << "Bytecode VM REPL. Enter Skrif code:\n";
     std::cout << "Multiline input supported (open braces continue to next line).\n";
