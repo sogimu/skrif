@@ -67,59 +67,291 @@ Json& VM::peek() { return stack_.back(); }
 Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
 {
     stack_.clear();
+    stack_.reserve(256);
     frames_.clear();
+    frames_.reserve(256);
 
-    frames_.push_back({ &top_chunk, 0, 0, global_env });
+    frames_.push_back({ &top_chunk, 0, 0, global_env, {} });
 
+// ── computed-goto fast path (GCC / Clang) ────────────────────────────────────
+#ifdef __GNUC__
+    static const void* const dispatch_table[] = {
+        &&op_PUSH_NULL,     // 0
+        &&op_PUSH_BOOL,     // 1
+        &&op_PUSH_INT,      // 2
+        &&op_PUSH_DOUBLE,   // 3
+        &&op_PUSH_STRING,   // 4
+        &&op_LOAD,          // 5
+        &&op_STORE_LOCAL,   // 6
+        &&op_STORE_GLOBAL,  // 7
+        &&op_ADD,           // 8
+        &&op_SUB,           // 9
+        &&op_MUL,           // 10
+        &&op_DIV,           // 11
+        &&op_NEG,           // 12
+        &&op_EQ,            // 13
+        &&op_NEQ,           // 14
+        &&op_LT,            // 15
+        &&op_LTE,           // 16
+        &&op_GT,            // 17
+        &&op_GTE,           // 18
+        &&op_NOT,           // 19
+        &&op_MAKE_ARRAY,    // 20
+        &&op_MAKE_OBJECT,   // 21
+        &&op_GET_MEMBER,    // 22
+        &&op_SET_MEMBER,    // 23
+        &&op_JUMP,          // 24
+        &&op_JUMP_IF_FALSE, // 25
+        &&op_MAKE_CLOSURE,  // 26
+        &&op_CALL,          // 27
+        &&op_RETURN,        // 28
+        &&op_PRINT,         // 29
+        &&op_POP,           // 30
+        &&op_LOAD_SLOT,     // 31
+        &&op_STORE_SLOT,    // 32
+    };
+
+    Instruction gt_instr;
+    CallFrame* gt_frame;
+
+#define DISPATCH() \
+    do { \
+        if (frames_.empty()) goto gt_end; \
+        gt_frame = &frames_.back(); \
+        if (gt_frame->ip >= (int)gt_frame->chunk->code.size()) goto gt_end; \
+        gt_instr = gt_frame->chunk->code[gt_frame->ip++]; \
+        goto *dispatch_table[(int)gt_instr.opcode]; \
+    } while(0)
+
+    DISPATCH();
+
+    op_PUSH_NULL:   push(Json{});                                                           DISPATCH();
+    op_PUSH_BOOL:   push(Json{(bool)gt_instr.operand});                                     DISPATCH();
+    op_PUSH_INT:    push(Json{gt_frame->chunk->int_constants[gt_instr.operand]});           DISPATCH();
+    op_PUSH_DOUBLE: push(Json{gt_frame->chunk->double_constants[gt_instr.operand]});        DISPATCH();
+    op_PUSH_STRING: push(Json{gt_frame->chunk->string_constants[gt_instr.operand]});        DISPATCH();
+
+    op_LOAD: {
+        push(gt_frame->env->operator[](gt_frame->chunk->string_constants[gt_instr.operand]));
+        DISPATCH();
+    }
+    op_STORE_LOCAL: {
+        { Json val = pop(); gt_frame->env->write(gt_frame->chunk->string_constants[gt_instr.operand], val, EnvScope::VaribleType::Local); }
+        DISPATCH();
+    }
+    op_STORE_GLOBAL: {
+        { Json val = pop(); gt_frame->env->write(gt_frame->chunk->string_constants[gt_instr.operand], val, EnvScope::VaribleType::Global); }
+        DISPATCH();
+    }
+
+    op_ADD: { { Json r = pop(); Json l = pop(); push(l + r); } DISPATCH(); }
+    op_SUB: { { Json r = pop(); Json l = pop(); push(l - r); } DISPATCH(); }
+    op_MUL: { { Json r = pop(); Json l = pop(); push(l * r); } DISPATCH(); }
+    op_DIV: { { Json r = pop(); Json l = pop(); push(l / r); } DISPATCH(); }
+
+    op_NEG: {
+        {
+            Json v = pop();
+            if (v.is_int())         push(Json{-v.get_int()});
+            else if (v.is_double()) push(Json{-v.get_double()});
+            else                    push(Json{});
+        }
+        DISPATCH();
+    }
+    op_NOT: {
+        { Json v = pop(); push(v.is_bool() ? Json{!v.get_bool()} : Json{}); }
+        DISPATCH();
+    }
+
+    op_EQ:  { { Json r = pop(); Json l = pop(); push(Json{l == r}); } DISPATCH(); }
+    op_NEQ: { { Json r = pop(); Json l = pop(); push(Json{l != r}); } DISPATCH(); }
+    op_LT:  { { Json r = pop(); Json l = pop(); push(Json{l <  r}); } DISPATCH(); }
+    op_LTE: { { Json r = pop(); Json l = pop(); push(Json{l <= r}); } DISPATCH(); }
+    op_GT:  { { Json r = pop(); Json l = pop(); push(Json{l >  r}); } DISPATCH(); }
+    op_GTE: { { Json r = pop(); Json l = pop(); push(Json{l >= r}); } DISPATCH(); }
+
+    op_MAKE_ARRAY: {
+        {
+            int n = gt_instr.operand;
+            int base = (int)stack_.size() - n;
+            std::vector<Json> elems(
+                std::make_move_iterator(stack_.begin() + base),
+                std::make_move_iterator(stack_.end()));
+            stack_.resize(base);
+            push(Json{std::move(elems)});
+        }
+        DISPATCH();
+    }
+    op_MAKE_OBJECT: {
+        {
+            int n = gt_instr.operand;
+            std::map<std::string, Json> obj;
+            for (int i = 0; i < n; ++i) {
+                Json val = pop(); Json key = pop();
+                obj[key.get_string()] = std::move(val);
+            }
+            push(Json{std::move(obj)});
+        }
+        DISPATCH();
+    }
+
+    op_GET_MEMBER: {
+        {
+            Json key = pop();
+            Json container = pop();
+            if (container.is_array()) {
+                auto& arr = container.get_array();
+                int idx = key.get_int();
+                push((idx >= 0 && idx < (int)arr.size()) ? arr[idx] : Json{});
+            } else if (container.is_object()) {
+                auto& obj = container.get_object();
+                auto it = obj.find(key.get_string());
+                push(it != obj.end() ? it->second : Json{});
+            } else {
+                push(Json{});
+            }
+        }
+        DISPATCH();
+    }
+    op_SET_MEMBER: {
+        {
+            Json val = pop(); Json key = pop(); Json container = pop();
+            if (container.is_array()) {
+                int idx = key.get_int();
+                auto& arr = container.get_array();
+                if (idx >= (int)arr.size()) arr.resize(idx + 1);
+                arr[idx] = std::move(val);
+            } else if (container.is_object()) {
+                container.get_object()[key.get_string()] = std::move(val);
+            }
+        }
+        DISPATCH();
+    }
+
+    op_JUMP:
+        gt_frame->ip = gt_instr.operand;
+        DISPATCH();
+
+    op_JUMP_IF_FALSE: {
+        {
+            Json cond = pop();
+            bool falsy = cond.is_null()
+                      || (cond.is_bool()   && !cond.get_bool())
+                      || (cond.is_int()    && cond.get_int() == 0)
+                      || (cond.is_double() && cond.get_double() == 0.0);
+            if (falsy) gt_frame->ip = gt_instr.operand;
+        }
+        DISPATCH();
+    }
+
+    op_MAKE_CLOSURE: {
+        {
+            const auto& proto = gt_frame->chunk->function_protos[gt_instr.operand];
+            auto fn = std::make_shared<json::Function>(
+                gt_frame->env,
+                proto->get_text(),
+                std::vector<std::string>(proto->get_params()),
+                proto->get_body_chunk());
+            push(Json{*fn});
+        }
+        DISPATCH();
+    }
+
+    op_CALL: {
+        {
+            int n_args = gt_instr.operand;
+            int args_base = (int)stack_.size() - n_args;
+            std::vector<Json> args(
+                std::make_move_iterator(stack_.begin() + args_base),
+                std::make_move_iterator(stack_.end()));
+            stack_.resize(args_base);
+
+            Json callee = pop();
+            if (!callee.is_function()) throw std::runtime_error("CALL: not a function");
+
+            const json::Function& fn = callee.get_function();
+            const Chunk& body = fn.get_body();
+            const auto& params = fn.get_params();
+
+            auto new_env = std::make_shared<EnvScope>(fn.getScope());
+            int base = (int)stack_.size();
+            CallFrame nf{ &body, 0, base, new_env, {} };
+
+            if (body.num_locals > 0) {
+                nf.locals.resize(body.num_locals);
+                for (int i = 0; i < (int)params.size(); ++i)
+                    nf.locals[i] = std::move(args[i]);
+            } else {
+                for (int i = 0; i < (int)params.size(); ++i)
+                    new_env->write(params[i], args[i], EnvScope::VaribleType::Local);
+            }
+            frames_.push_back(std::move(nf));
+        }
+        DISPATCH();
+    }
+
+    op_RETURN: {
+        Json return_val = pop();
+        if (gt_frame->env->has_closures)
+            breakCycles(gt_frame->env.get());
+        int base = gt_frame->base_stack_size;
+        frames_.pop_back();
+        if (frames_.empty()) return return_val;
+        stack_.resize(base);
+        push(std::move(return_val));
+        DISPATCH();
+    }
+
+    op_PRINT: {
+        {
+            Json val = pop();
+            if      (val.is_string())   std::printf("%s\n",  val.get_string().c_str());
+            else if (val.is_int())      std::printf("%d\n",  val.get_int());
+            else if (val.is_double())   std::printf("%f\n",  val.get_double());
+            else if (val.is_bool())     std::printf("%s\n",  val.get_bool() ? "true" : "false");
+            else if (val.is_function()) std::printf("%s\n",  val.get_function().get_text().c_str());
+            else                        std::cout << val << "\n";
+        }
+        DISPATCH();
+    }
+
+    op_POP:        { pop(); }                                     DISPATCH();
+    op_LOAD_SLOT:  push(gt_frame->locals[gt_instr.operand]);      DISPATCH();
+    op_STORE_SLOT: { gt_frame->locals[gt_instr.operand] = pop(); } DISPATCH();
+
+gt_end:
+#undef DISPATCH
+
+// ── switch-based fallback (non-GCC compilers) ────────────────────────────────
+#else
     while (!frames_.empty()) {
         auto& frame = frames_.back();
 
-        if (frame.ip >= (int)frame.chunk->code.size()) {
-            // Top-level ran off end — return top of stack (or null)
+        if (frame.ip >= (int)frame.chunk->code.size())
             break;
-        }
 
         const Instruction instr = frame.chunk->code[frame.ip++];
 
         switch (instr.opcode) {
 
-        case Opcode::PUSH_NULL:
-            push(Json{});
-            break;
-
-        case Opcode::PUSH_BOOL:
-            push(Json{(bool)instr.operand});
-            break;
-
-        case Opcode::PUSH_INT:
-            push(Json{frame.chunk->int_constants[instr.operand]});
-            break;
-
-        case Opcode::PUSH_DOUBLE:
-            push(Json{frame.chunk->double_constants[instr.operand]});
-            break;
-
-        case Opcode::PUSH_STRING:
-            push(Json{frame.chunk->string_constants[instr.operand]});
-            break;
+        case Opcode::PUSH_NULL:   push(Json{});                                              break;
+        case Opcode::PUSH_BOOL:   push(Json{(bool)instr.operand});                          break;
+        case Opcode::PUSH_INT:    push(Json{frame.chunk->int_constants[instr.operand]});    break;
+        case Opcode::PUSH_DOUBLE: push(Json{frame.chunk->double_constants[instr.operand]}); break;
+        case Opcode::PUSH_STRING: push(Json{frame.chunk->string_constants[instr.operand]}); break;
 
         case Opcode::LOAD: {
-            const std::string& name = frame.chunk->string_constants[instr.operand];
-            push(frame.env->operator[](name));
+            push(frame.env->operator[](frame.chunk->string_constants[instr.operand]));
             break;
         }
-
         case Opcode::STORE_LOCAL: {
-            const std::string& name = frame.chunk->string_constants[instr.operand];
             Json val = pop();
-            frame.env->write(name, val, EnvScope::VaribleType::Local);
+            frame.env->write(frame.chunk->string_constants[instr.operand], val, EnvScope::VaribleType::Local);
             break;
         }
-
         case Opcode::STORE_GLOBAL: {
-            const std::string& name = frame.chunk->string_constants[instr.operand];
             Json val = pop();
-            frame.env->write(name, val, EnvScope::VaribleType::Global);
+            frame.env->write(frame.chunk->string_constants[instr.operand], val, EnvScope::VaribleType::Global);
             break;
         }
 
@@ -130,44 +362,42 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
 
         case Opcode::NEG: {
             Json v = pop();
-            if (v.is_int())    push(Json{-v.get_int()});
+            if (v.is_int())         push(Json{-v.get_int()});
             else if (v.is_double()) push(Json{-v.get_double()});
-            else push(Json{});
+            else                    push(Json{});
             break;
         }
-
         case Opcode::NOT: {
             Json v = pop();
-            if (v.is_bool()) push(Json{!v.get_bool()});
-            else push(Json{});
+            push(v.is_bool() ? Json{!v.get_bool()} : Json{});
             break;
         }
 
         case Opcode::EQ:  { Json r = pop(); Json l = pop(); push(Json{l == r}); break; }
         case Opcode::NEQ: { Json r = pop(); Json l = pop(); push(Json{l != r}); break; }
-        case Opcode::LT:  { Json r = pop(); Json l = pop(); push(Json{l < r});  break; }
+        case Opcode::LT:  { Json r = pop(); Json l = pop(); push(Json{l <  r}); break; }
         case Opcode::LTE: { Json r = pop(); Json l = pop(); push(Json{l <= r}); break; }
-        case Opcode::GT:  { Json r = pop(); Json l = pop(); push(Json{l > r});  break; }
+        case Opcode::GT:  { Json r = pop(); Json l = pop(); push(Json{l >  r}); break; }
         case Opcode::GTE: { Json r = pop(); Json l = pop(); push(Json{l >= r}); break; }
 
         case Opcode::MAKE_ARRAY: {
             int n = instr.operand;
-            std::vector<Json> elems(n);
-            for (int i = n - 1; i >= 0; --i)
-                elems[i] = pop();
-            push(Json{elems});
+            int base = (int)stack_.size() - n;
+            std::vector<Json> elems(
+                std::make_move_iterator(stack_.begin() + base),
+                std::make_move_iterator(stack_.end()));
+            stack_.resize(base);
+            push(Json{std::move(elems)});
             break;
         }
-
         case Opcode::MAKE_OBJECT: {
             int n = instr.operand;
             std::map<std::string, Json> obj;
             for (int i = 0; i < n; ++i) {
-                Json val = pop();
-                Json key = pop();
+                Json val = pop(); Json key = pop();
                 obj[key.get_string()] = std::move(val);
             }
-            push(Json{obj});
+            push(Json{std::move(obj)});
             break;
         }
 
@@ -177,10 +407,7 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
             if (container.is_array()) {
                 auto& arr = container.get_array();
                 int idx = key.get_int();
-                if (idx < 0 || idx >= (int)arr.size())
-                    push(Json{});
-                else
-                    push(arr[idx]);
+                push((idx >= 0 && idx < (int)arr.size()) ? arr[idx] : Json{});
             } else if (container.is_object()) {
                 auto& obj = container.get_object();
                 auto it = obj.find(key.get_string());
@@ -190,16 +417,12 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
             }
             break;
         }
-
         case Opcode::SET_MEMBER: {
-            Json val       = pop();
-            Json key       = pop();
-            Json container = pop();
+            Json val = pop(); Json key = pop(); Json container = pop();
             if (container.is_array()) {
                 int idx = key.get_int();
                 auto& arr = container.get_array();
-                if (idx >= (int)arr.size())
-                    arr.resize(idx + 1);
+                if (idx >= (int)arr.size()) arr.resize(idx + 1);
                 arr[idx] = std::move(val);
             } else if (container.is_object()) {
                 container.get_object()[key.get_string()] = std::move(val);
@@ -217,8 +440,7 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
                       || (cond.is_bool()   && !cond.get_bool())
                       || (cond.is_int()    && cond.get_int() == 0)
                       || (cond.is_double() && cond.get_double() == 0.0);
-            if (falsy)
-                frame.ip = instr.operand;
+            if (falsy) frame.ip = instr.operand;
             break;
         }
 
@@ -235,40 +457,42 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
 
         case Opcode::CALL: {
             int n_args = instr.operand;
-
-            // Pop arguments (they were pushed left-to-right, so last arg is on top)
-            std::vector<Json> args(n_args);
-            for (int i = n_args - 1; i >= 0; --i)
-                args[i] = pop();
+            int args_base = (int)stack_.size() - n_args;
+            std::vector<Json> args(
+                std::make_move_iterator(stack_.begin() + args_base),
+                std::make_move_iterator(stack_.end()));
+            stack_.resize(args_base);
 
             Json callee = pop();
-            if (!callee.is_function())
-                throw std::runtime_error("CALL: not a function");
+            if (!callee.is_function()) throw std::runtime_error("CALL: not a function");
 
             const json::Function& fn = callee.get_function();
+            const Chunk& body = fn.get_body();
             const auto& params = fn.get_params();
 
-            // New scope rooted at closure
             auto new_env = std::make_shared<EnvScope>(fn.getScope());
-            for (int i = 0; i < (int)params.size(); ++i)
-                new_env->write(params[i], args[i], EnvScope::VaribleType::Local);
-
             int base = (int)stack_.size();
-            frames_.push_back({ &fn.get_body(), 0, base, new_env });
+            CallFrame nf{ &body, 0, base, new_env, {} };
+
+            if (body.num_locals > 0) {
+                nf.locals.resize(body.num_locals);
+                for (int i = 0; i < (int)params.size(); ++i)
+                    nf.locals[i] = std::move(args[i]);
+            } else {
+                for (int i = 0; i < (int)params.size(); ++i)
+                    new_env->write(params[i], args[i], EnvScope::VaribleType::Local);
+            }
+            frames_.push_back(std::move(nf));
             break;
         }
 
         case Opcode::RETURN: {
             Json return_val = pop();
-            breakCycles(frame.env.get());
+            if (frame.env->has_closures)
+                breakCycles(frame.env.get());
             int base = frame.base_stack_size;
             frames_.pop_back();
-
-            if (frames_.empty()) {
-                return return_val;
-            }
-
-            // Restore stack to before CALL, then push return value
+            if (frames_.empty()) return return_val;
             stack_.resize(base);
             push(std::move(return_val));
             break;
@@ -276,31 +500,26 @@ Json VM::run(const Chunk& top_chunk, std::shared_ptr<EnvScope> global_env)
 
         case Opcode::PRINT: {
             Json val = pop();
-            if (val.is_string())
-                std::printf("%s\n", val.get_string().c_str());
-            else if (val.is_int())
-                std::printf("%d\n", val.get_int());
-            else if (val.is_double())
-                std::printf("%f\n", val.get_double());
-            else if (val.is_bool())
-                std::printf("%s\n", val.get_bool() ? "true" : "false");
-            else if (val.is_function())
-                std::printf("%s\n", val.get_function().get_text().c_str());
-            else
-                std::cout << val << "\n";
+            if      (val.is_string())   std::printf("%s\n",  val.get_string().c_str());
+            else if (val.is_int())      std::printf("%d\n",  val.get_int());
+            else if (val.is_double())   std::printf("%f\n",  val.get_double());
+            else if (val.is_bool())     std::printf("%s\n",  val.get_bool() ? "true" : "false");
+            else if (val.is_function()) std::printf("%s\n",  val.get_function().get_text().c_str());
+            else                        std::cout << val << "\n";
             break;
         }
 
-        case Opcode::POP:
-            pop();
-            break;
+        case Opcode::POP:        pop();                               break;
+        case Opcode::LOAD_SLOT:  push(frame.locals[instr.operand]);  break;
+        case Opcode::STORE_SLOT: frame.locals[instr.operand] = pop(); break;
         }
     }
+#endif
 
-    // Top-level ran off end without explicit RETURN.
-    // The top-level frame's env still lives on `frames_` — break cycles before it dies.
+    // Top-level ran off end without explicit RETURN — break cycles, return top of stack.
     while (!frames_.empty()) {
-        breakCycles(frames_.back().env.get());
+        if (frames_.back().env->has_closures)
+            breakCycles(frames_.back().env.get());
         frames_.pop_back();
     }
     if (!stack_.empty())

@@ -9,12 +9,13 @@ endif()
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/disassembler.cpp
 )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 find_package(Readline REQUIRED)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${READLINE_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${READLINE_INCLUDE_DIR} src)
 
 if (NOT READLINE_INCLUDE_DIR)
     message(FATAL_ERROR "Could not find readline include directory")

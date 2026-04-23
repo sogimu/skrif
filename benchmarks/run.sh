@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PROGRAMS_DIR="$SCRIPT_DIR/programs"
 
-TREE_WALKING="$PROJECT_ROOT/out/RelWithDebInfo/project/interpreters/tree-walking-interpreter/repl/tree_walking_interpreter_repl"
-BYTECODE_VM="$PROJECT_ROOT/out/RelWithDebInfo/project/interpreters/bytecode-based-vm-interpreter/repl/bytecode_vm_interpreter_repl"
+TREE_WALKING="$PROJECT_ROOT/out/Release/project/interpreters/tree-walking-interpreter/repl/tree_walking_interpreter_repl"
+BYTECODE_VM="$PROJECT_ROOT/out/Release/project/interpreters/bytecode-based-vm-interpreter/repl/bytecode_vm_interpreter_repl"
 
 RED='\033[0;31m'; YEL='\033[1;33m'; GRN='\033[0;32m'; CYN='\033[1;36m'; BLD='\033[1m'; NC='\033[0m'
 
@@ -63,6 +63,22 @@ for _i in 1 2 3 4 5; do
 done
 NODE_STARTUP=$_startup_min
 echo -e "${GRN}${NODE_STARTUP} ms${NC} (subtracted from V8 times)"
+
+BVM_STARTUP=0
+if $HAVE_BVM; then
+    printf "  Measuring Bytecode VM startup... "
+    _empty=$(mktemp /tmp/skrif_bench_XXXXXX.js)
+    printf '{}' >"$_empty"
+    _startup_min=99999
+    for _i in 1 2 3 4 5; do
+        _t0=$(date +%s%N); "$BYTECODE_VM" "$_empty" >/dev/null 2>&1; _t1=$(date +%s%N)
+        _t=$(( (_t1 - _t0) / 1000000 ))
+        (( _t < _startup_min )) && _startup_min=$_t
+    done
+    rm -f "$_empty"
+    BVM_STARTUP=$_startup_min
+    echo -e "${GRN}${BVM_STARTUP} ms${NC} (subtracted from Bytecode VM times)"
+fi
 echo ""
 
 # ── Timing helpers ──────────────────────────────────────────────────────────
@@ -89,6 +105,14 @@ time_v8() {
     rm -f "$tmp"
     elapsed=$(( (t1 - t0) / 1000000 ))
     net=$(( elapsed - NODE_STARTUP ))
+    echo $(( net > 1 ? net : 1 ))
+}
+
+# Run Bytecode VM; returns net execution time with startup overhead subtracted
+time_bvm() {
+    local elapsed net
+    elapsed=$(time_ms "$BYTECODE_VM" "$1")
+    net=$(( elapsed - BVM_STARTUP ))
     echo $(( net > 1 ? net : 1 ))
 }
 
@@ -144,7 +168,7 @@ for prog in "${PROGRAMS[@]}"; do
 
     if $HAVE_BVM; then
         printf "  %-28s" "Bytecode VM Interpreter"
-        ms=$(time_ms "$BYTECODE_VM" "$prog")
+        ms=$(time_bvm "$prog")
         T_BVM["$name"]=$ms
         r=$(ratio "$ms" "$v8_ms")
         printf "%s   " "$(fmt "$ms")"

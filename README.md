@@ -6,14 +6,14 @@
 
 ## Performance vs V8
 
-`RelWithDebInfo` build · Node.js v18.20.8 · startup overhead subtracted from V8 times
+`Release` build · Node.js v18.20.8 · startup overhead subtracted from V8 times
 
-| Benchmark | V8 (net) | Bytecode VM | Tree-Walking |
+| Benchmark | V8 (net) | Bytecode VM (net) | Tree-Walking |
 |---|---|---|---|
-| Recursive fib(25) | 5 ms | 17× slower | **1123× slower** |
-| Iterative fib(200k) | 7 ms | 13× slower | **930× slower** |
-| Nested loops 400×400 | 5 ms | 11× slower | **912× slower** |
-| Closure counter ×100k | 6 ms | 9× slower | **616× slower** |
+| closures.js | 5 ms | 9.0× slower | **628× slower** |
+| fib_iterative.js | 7 ms | 6.6× slower | **772× slower** |
+| fib_recursive.js | 5 ms | 13.6× slower | **947× slower** |
+| nested_loops.js | 5 ms | 10.0× slower | **780× slower** |
 
 Run benchmarks: `bash benchmarks/run.sh`
 

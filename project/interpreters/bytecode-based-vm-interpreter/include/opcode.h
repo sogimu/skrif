@@ -32,5 +32,7 @@ enum class Opcode : uint8_t {
     CALL,
     RETURN,
     PRINT,
-    POP
+    POP,
+    LOAD_SLOT,
+    STORE_SLOT
 };

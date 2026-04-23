@@ -18,34 +18,42 @@ void EnvScope::set_parent( const std::shared_ptr<EnvScope>& parent )
     mParent = parent;
 }
 
-std::map< std::string, Json >::iterator EnvScope::begin(VaribleType)
+std::unordered_map< std::string, Json >::iterator EnvScope::begin(VaribleType)
 {
     return mVaribleByKey.begin();
 }
 
-std::map< std::string, Json >::iterator EnvScope::end(VaribleType)
+std::unordered_map< std::string, Json >::iterator EnvScope::end(VaribleType)
 {
     return mVaribleByKey.end();
 }
 
 void EnvScope::write(const std::string& key, const Json& value, VaribleType varible_type)
 {
+    // Mark if this scope (or any ancestor) might acquire a function through this write.
+    // Arrays and objects are also marked because they may transitively contain functions.
+    const bool might_have_fn = value.is_function() || value.is_array() || value.is_object();
+    if (might_have_fn) has_closures = true;
+
     auto current_scope = this->shared_from_this();
     if( varible_type == VaribleType::Global )
     {
-        auto has_key = contains( key );
-        if( has_key )
-        {
-            this->operator[](key) = value;
+        // Walk the chain to find an existing binding; mark that scope too.
+        auto scope = current_scope;
+        while (scope) {
+            if (scope->mVaribleByKey.find(key) != scope->mVaribleByKey.end()) {
+                if (might_have_fn) scope->has_closures = true;
+                scope->mVaribleByKey[key] = value;
+                return;
+            }
+            scope = scope->mParent;
         }
-        else
-        {
-            current_scope->mVaribleByKey[ key ] = value;
-        }
+        // No existing binding: create one in the current scope.
+        current_scope->mVaribleByKey[key] = value;
     }
     else
     {
-        current_scope->mVaribleByKey[ key ] = value;
+        current_scope->mVaribleByKey[key] = value;
     }
 }
 
